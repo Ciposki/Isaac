@@ -11,9 +11,16 @@ arrows={
     37:(0,-1),#←
     38:(1,-1),#↑
     39:(0,1),#→
-    40:(1,1)#↓
-    
+    40:(1,1)#↓    
 }
+def detect_collision(a,b):
+    """
+    IF A IS INSIDE B
+    """ 
+    if ((b.pos[0]<=a.pos[0]<=b.pos[0]+b.xbound) or (b.pos[0]<=a.pos[0]+a.xbound<=b.pos[0]+b.xbound)) and ((b.pos[1]<=a.pos[1]<=b.pos[1]+b.ybound) or (b.pos[1]<=a.pos[1]+a.ybound<=b.pos[1]+b.ybound)):
+        return True
+    return False
+
 class player():
     def __init__(self):
         self.direction = [0,0]
@@ -25,7 +32,8 @@ class player():
         self.teartimer=0
         self.ybound=100
         self.xbound=100
-        self.invincibility_timer=20
+        self.invincibility_timer=0
+        self.maxinvincibility_timer=21
         
         self.init_draw()
     def init_draw(self):
@@ -33,6 +41,7 @@ class player():
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
     def update_state(self):
         #If going diagonally
+        oldpos=self.pos.copy()
         if self.direction[0]&self.direction[1]:
             self.pos = [self.pos[0]+self.direction[0]*self.speed*math.sqrt(2)/2,self.pos[1]+self.direction[1]*self.speed*math.sqrt(2)/2]
         else:
@@ -40,21 +49,39 @@ class player():
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.teartimer<self.maxteartimer:
             self.teartimer+=1
-        self.detect_collisions()
+        if self.detect_collisions()==2:
+            self.pos=oldpos
+            
+        """
+        THIS COULD PROBABLY BE DONE IN A CLEANER WAY
+        """
+        if self.invincibility_timer==20:
+            self.invincibility_timer=0
+        if self.invincibility_timer>0:
+            self.invincibility_timer+=1
     def detect_collisions(self):
         
-        for tear in enemy_tears:
-            xtear=tear.pos[0]
-            ytear=tear.pos[1]
-            if ((self.pos[0]<=xtear<=self.pos[0]+self.xbound) or (self.pos[0]<=xtear+tear.xbound<=self.pos[0]+self.xbound)) and ((self.pos[1]<=ytear<=self.pos[1]+self.ybound) or (self.pos[1]<=ytear+tear.ybound<=self.pos[1]+self.ybound)):
-                print(self.hp)
-                self.hp-=1
+        
         for enemy in enemies:
-            xenemy=enemy.pos[0]
-            yenemy=enemy.pos[1]
-            if ((xenemy<=self.pos[0]<=xenemy+enemy.xbound) or (xenemy<=self.pos[0]+self.xbound<=xenemy+enemy.xbound)) and ((yenemy<=self.pos[1]<=yenemy+enemy.ybound) or (yenemy<=self.pos[1]+self.ybound<=yenemy+enemy.ybound)):
-                self.hp-=1
-                print(self.hp)
+            if detect_collision(self,enemy):
+                self.take_damage(1)
+                return 2
+        for object in environment:
+            if detect_collision(self,object):
+                return 2
+        for tear in enemy_tears:
+            if detect_collision(tear,self):
+                self.take_damage(1)
+                tear.die()
+                return 1
+        return 0
+    def take_damage(self,damage):
+        if self.invincibility_timer==0:
+            if self.hp==0:
+                print("GAY")
+            else:
+                self.hp-=damage
+                self.invincibility_timer=1
 class Tear():
     def __init__(self):
         self.direction=[0,0]
@@ -76,6 +103,9 @@ class Tear():
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
             self.tear_geometry.place(x=self.pos[0],y=self.pos[1])
+            for obj in environment:
+                if detect_collision(self,obj):
+                    self.die()
 
     def die(self):
         
@@ -106,7 +136,9 @@ class Enemy_Tear():
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
             self.tear_geometry.place(x=self.pos[0],y=self.pos[1])
-
+            for obj in environment:
+                if detect_collision(self,obj):
+                    self.die()
     def die(self):
         
             enemy_tears.pop(0)
@@ -129,7 +161,7 @@ class Static_Enemy():
         self.init_draw()
         
     def init_draw(self):
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=100,width=100)
+        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def update_state(self):
         if self.hp<=0:
@@ -150,7 +182,7 @@ class Static_Enemy():
         for tear in Giova.tears:
             xtear=tear.pos[0]
             ytear=tear.pos[1]
-            if ((self.pos[0]<=xtear<=self.pos[0]+self.xbound) or (self.pos[0]<=xtear+tear.xbound<=self.pos[0]+self.xbound)) and ((self.pos[1]<=ytear<=self.pos[1]+self.ybound) or (self.pos[1]<=ytear+tear.ybound<=self.pos[1]+self.ybound)):
+            if detect_collision(tear,self):
                 self.hp-=1
                 tear.die()
                 break
@@ -159,12 +191,19 @@ class Static_Enemy():
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
         self.enemy_geometry.destroy()
-            
+
+class Wall():
+    def __init__(self):
+        self.pos=[500,500]
+        self.ybound=100
+        self.xbound=100
+        self.enemy_geometry = tk.Canvas(window,bg="black",height=100,width=100)
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
 
 Giova = player()
 enemies=[Static_Enemy()]
 enemy_tears=[]
-
+environment=[Wall()]
 def input(event):
     pressed=event.keycode
     if pressed in orientations:
