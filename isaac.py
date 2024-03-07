@@ -21,6 +21,21 @@ def detect_collision(a,b):
         return True
     return False
 
+def spawn_tear(direction,tear,entity):
+    """Spawns a tear based on the direction"""
+    tear.pos=entity.pos.copy()
+    tear.direction[arrows[direction][0]]=arrows[direction][1]
+    match direction:
+        case 37:
+            tear.pos[1]+=(entity.ybound)/2
+        case 38:
+            tear.pos[0]+=(entity.xbound)/2
+        case 39:
+            tear.pos[1]+=(entity.ybound)/2
+            tear.pos[0]+=(entity.xbound)
+        case 40:
+            tear.pos[0]+=(entity.xbound)/2
+            tear.pos[1]+=(entity.ybound)
 class player():
     def __init__(self):
         self.direction = [0,0]
@@ -51,7 +66,7 @@ class player():
             self.teartimer+=1
         if self.detect_collisions()==2:
             self.pos=oldpos
-            
+
         """
         THIS COULD PROBABLY BE DONE IN A CLEANER WAY
         """
@@ -94,7 +109,6 @@ class Tear():
 
     def init_draw(self):
         self.tear_geometry = tk.Canvas(window,bg="green",height=self.ybound,width=self.xbound)
-        self.tear_geometry.place(x=self.pos[0],y=self.pos[1])
         
     def update_state(self):
         self.timer-=1
@@ -171,8 +185,7 @@ class Static_Enemy():
             self.timer-=1
             if self.timer==0:
                 newtear=Enemy_Tear()
-                newtear.pos=[300,350]
-                newtear.direction=[0,-1]
+                spawn_tear(40,newtear,self)
                 enemy_tears.append(newtear)
                 
                 
@@ -191,6 +204,8 @@ class Static_Enemy():
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
         self.enemy_geometry.destroy()
+
+
 
 class Wall():
     def __init__(self):
@@ -214,8 +229,7 @@ def input(event):
     elif pressed in arrows and Giova.teartimer==Giova.maxteartimer:
         Giova.teartimer=0
         new_tear=Tear()
-        rotate=arrows[pressed]
-        new_tear.direction[rotate[0]]=rotate[1]
+        spawn_tear(pressed,new_tear,Giova)
         Giova.tears.append(new_tear)
 def release(event):
     pressed=event.keycode
@@ -233,6 +247,15 @@ def update():
     for enemy_tear in enemy_tears:
         enemy_tear.update_state()
     window.after(20,update)
+
+
+"""Level generation stuff"""
+number_of_rooms=random.randint(5,9)
+door_links={}
+
+
+
+
 
 update()
 window.bind("<KeyPress>",input)
