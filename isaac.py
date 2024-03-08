@@ -1,6 +1,11 @@
+#TODO Fix Input(you cant move and shoot at the same time)
+
+
 import tkinter as tk
 import math
 import random
+import sys
+
 window = tk.Tk()
 window.geometry("1920x1080")
 orientations={87:(1,-1),#W
@@ -13,6 +18,11 @@ arrows={
     39:(0,1),#→
     40:(1,1)#↓    
 }
+
+def normalize_vector(vector):
+    magnitude = sum(i**2 for i in vector)**0.5
+    return [i/magnitude for i in vector]
+
 def detect_collision(a,b):
     """
     IF A IS INSIDE B
@@ -40,10 +50,10 @@ class player():
     def __init__(self):
         self.direction = [0,0]
         self.pos = [0,0]
-        self.speed = 3
+        self.speed = 5
         self.tears=[]
         self.hp=6
-        self.maxteartimer=50
+        self.maxteartimer=10
         self.teartimer=0
         self.ybound=100
         self.xbound=100
@@ -93,7 +103,7 @@ class player():
     def take_damage(self,damage):
         if self.invincibility_timer==0:
             if self.hp==0:
-                print("GAY")
+                sys.exit()
             else:
                 self.hp-=damage
                 self.invincibility_timer=1
@@ -134,7 +144,7 @@ class Enemy_Tear():
     def __init__(self):
         self.direction=[0,0]
         self.pos=[0,0]
-        self.speed=1 
+        self.speed=5
         self.timer=100
         self.xbound=10
         self.ybound=10
@@ -181,11 +191,14 @@ class Static_Enemy():
         if self.hp<=0:
             self.die()
         else:
+            
             self.detect_collisions()
             self.timer-=1
             if self.timer==0:
+                dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
                 newtear=Enemy_Tear()
-                spawn_tear(40,newtear,self)
+                newtear.pos=[self.pos[0]+self.xbound/2,self.pos[1]+self.ybound/2]
+                newtear.direction = normalize_vector(dir)
                 enemy_tears.append(newtear)
                 
                 
@@ -204,9 +217,107 @@ class Static_Enemy():
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
         self.enemy_geometry.destroy()
+class Follow_Enemy():
+    def __init__(self):
+        self.direction=[0,0]
+        self.speed = 2
+        self.pos=[500,700]
+        self.ybound=200
+        self.xbound=200
+        self.timer=100
+        self.timerdefault=100
+        self.hp=10
+        self.init_draw()
+        
+    def init_draw(self):
+        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+    def update_state(self):
+        
+        if self.hp<=0:
+            self.die()
+        else:
+            oldpos=self.pos.copy()
+            dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
+            self.direction=normalize_vector(dir)
+            self.pos= [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
+            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            if self.detect_collisions()==2:
+                print("gay")
+                self.pos=oldpos
+        
+                
+            
+            
+            
+    def detect_collisions(self):
+        for tear in Giova.tears:
+            xtear=tear.pos[0]
+            ytear=tear.pos[1]
+            if detect_collision(tear,self):
+                self.hp-=1
+                tear.die()
+                return 1
+        if detect_collision(Giova,self):
+            return 2
+        for object in environment:
+            if detect_collision(object,self):
+                return 2
+                    
+        return 0
+    def die(self):
+        enemies.remove(self)
+        self.enemy_geometry.place_forget()
+        self.enemy_geometry.delete()
+        self.enemy_geometry.destroy()
 
-
-
+    def __init__(self):
+        self.direction=[0,0]
+        self.speed = 2
+        self.pos=[500,700]
+        self.ybound=200
+        self.xbound=200
+        self.timer=100
+        self.timerdefault=100
+        self.hp=10
+        self.init_draw()
+        
+    def init_draw(self):
+        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+    def update_state(self):
+        
+        if self.hp<=0:
+            self.die()
+        else:
+            oldpos=self.pos.copy()
+            dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
+            self.direction=normalize_vector(dir)
+            self.pos= [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
+            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            if self.detect_collisions()==2:
+                self.pos=oldpos
+   
+    def detect_collisions(self):
+        for tear in Giova.tears:
+            xtear=tear.pos[0]
+            ytear=tear.pos[1]
+            if detect_collision(tear,self):
+                self.hp-=1
+                tear.die()
+                return 1
+        if detect_collision(Giova,self):
+            return 2
+        for object in environment:
+            if detect_collision(object,self):
+                return 2
+                    
+        return 0
+    def die(self):
+        enemies.remove(self)
+        self.enemy_geometry.place_forget()
+        self.enemy_geometry.delete()
+        self.enemy_geometry.destroy()
 class Wall():
     def __init__(self):
         self.pos=[500,500]
@@ -216,7 +327,7 @@ class Wall():
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
 
 Giova = player()
-enemies=[Static_Enemy()]
+enemies=[Static_Enemy(),Follow_Enemy()]
 enemy_tears=[]
 environment=[Wall()]
 def input(event):
