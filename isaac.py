@@ -435,6 +435,11 @@ class Room():
                 enemy.pos= [random.randint(150,1800), random.randint(150,950)]
                 objectt=0
             objectt+=1
+        while objectt<len(self.enemies):
+            if detect_collision(enemy,self.enemies[objectt]):
+                enemy.pos= [random.randint(150,1800), random.randint(150,950)]
+                objectt=0
+            objectt+=1
             
 
     def generate(self):
