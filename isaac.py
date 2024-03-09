@@ -138,6 +138,10 @@ class player():
                 self.take_damage(1)
                 tear.die()
                 return 1
+        for powerup in world.currentroom.power_up:
+            if detect_collision(powerup,self):
+                powerup.generate_powerup()
+                return 3
         return 0
     def take_damage(self,damage):
         if self.invincibility_timer==0:
@@ -392,7 +396,29 @@ environment=[]"""
 
 
 """Level generation stuff"""
+class PowerUp():
+    def __init__(self) -> None:
+        self.pos = [0,0]
+        self.characteristic = [Giova.speed,Tear().speed,Giova.hp]
+        self.xbound= 100
+        self.ybound=100
+    def draw(self):
+        self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
+        self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
 
+    def generate_powerup(self):
+        index=random.randint(0,2)
+        self.characteristic[index]+=random.randint(1,10)
+        self.die()
+        print(self.characteristic[index])
+
+    def die(self):
+        world.currentroom.power_up.remove(self)
+        self.powerup_geometry.place_forget()
+        self.powerup_geometry.delete()
+        self.powerup_geometry.destroy()
+
+    
 
 environment_options=[[Wall(),Wall()],[]]
 class World():
@@ -462,6 +488,8 @@ class World():
             self.currentroom.door_objects[0].die()
         while Giova.tears:
             Giova.tears[0].die()
+        while self.currentroom.power_up:
+            self.currentroom.power_up[0].die()
         self.currentroom=self.rooms[self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1]]
         direction=(direction+2)%4
         Giova.Door_Move(direction)
@@ -477,6 +505,7 @@ class Room():
         self.doors=[None]*4
         self.door_objects=[]
         self.enemies=[]
+        self.power_up=[]
         self.environment=[]
         self.enemy_tears=[]
         self.cleared=False
@@ -536,6 +565,15 @@ class Room():
                             enemy=Random_Enemy()
                     self.generate_position(enemy)
                     self.enemies.append(enemy)
+                #Might be added to other type of room
+                if not self.cleared:
+                    powNum= random.randint(0,2)
+                    for i in range(powNum):
+                        powerup = PowerUp()
+                        self.generate_position(powerup)
+                        powerup.draw()
+                        self.power_up.append(powerup)
+                        print("spawned")
             case "shop":
                 ...
             case "boss":
