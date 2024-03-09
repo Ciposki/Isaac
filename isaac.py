@@ -342,6 +342,8 @@ class Wall():
         self.xbound=100
         self.enemy_geometry = tk.Canvas(window,bg="black",height=100,width=100)
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+    def update(self):
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def die(self):
         world.currentroom.environment.remove(self)
         self.enemy_geometry.place_forget()
@@ -450,19 +452,13 @@ class World():
                             newroom.coordinates=newroom_coordinates
         self.currentroom.generate()
     def newroom(self,direction):
-        #print("there are ",len(self.currentroom.enemies),"enemies")
         while self.currentroom.enemies:
-            #print("killing enemy")
             self.currentroom.enemies[0].die()
         while self.currentroom.enemy_tears:
-            #print("killing tear")
             self.currentroom.enemy_tears[0].die()
         while self.currentroom.environment:
-            #print("killing wall")
             self.currentroom.environment[0].die()
-        #print("there are ",len(self.currentroom.door_objects),"doors")
         while self.currentroom.door_objects:
-            #print("killing door",self.currentroom.door_objects[0].direction)
             self.currentroom.door_objects[0].die()
         while Giova.tears:
             Giova.tears[0].die()
@@ -487,6 +483,7 @@ class Room():
         self.coordinates=[0,0]
         self.type="normal"
         self.env_type=random.choice(environment_options)
+        print(self.env_type)
 
     def generate_position(self, enemy):
         """
@@ -510,8 +507,11 @@ class Room():
 
     def generate(self):
         #Spawning doors
-        self.environment=self.env_type
-        print(self.environment)
+        self.environment=self.env_type.copy()
+        
+        print(self.environment,self.env_type)
+        for obj in self.environment:
+            obj.update()
         for i in range(4):
             if self.doors[i]==1:
                 door=Door()
