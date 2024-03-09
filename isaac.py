@@ -167,11 +167,11 @@ class Tear():
     def __init__(self):
         self.direction=[0,0]
         self.pos=Giova.pos.copy()
-        self.speed=4
+        self.speed=10
         self.timer=100
         self.xbound=10
         self.ybound=10
-        self.momentum=[Giova.direction[0]*2.2,Giova.direction[1]*2.2]
+        self.momentum=[Giova.direction[0]*1.5,Giova.direction[1]*1.5]
         self.init_draw()
 
     def init_draw(self):
@@ -345,10 +345,10 @@ class Wall():
     def update(self):
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def die(self):
-        world.currentroom.environment.remove(self)
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
-        self.enemy_geometry.destroy()
+
+        world.currentroom.environment.remove(self)
         
 
 def input(event):
@@ -394,7 +394,7 @@ environment=[]"""
 """Level generation stuff"""
 
 
-environment_options=[[Wall(),Wall()]]
+environment_options=[[Wall(),Wall()],[]]
 class World():
     def __init__(self):
         self.max_rooms=random.randint(6,11)
@@ -555,8 +555,8 @@ class Door():
         self.door_geometry.place(x=self.pos[0],y=self.pos[1])
     
     def detect_collision(self):
-        #currentroom.cleared==True and
-        if detect_collision(Giova,self):
+        
+        if world.currentroom.cleared ==True and detect_collision(Giova,self):
             print("AAAAAAAAA")
             
             world.newroom(self.direction)
