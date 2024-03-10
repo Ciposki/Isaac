@@ -5,6 +5,10 @@ import tkinter as tk
 import math
 import random
 import sys
+from PIL import ImageTk, Image
+
+
+
 random_dir=[-1,-0.5,0,1,0.5]
 window = tk.Tk()
 width=1920
@@ -55,7 +59,7 @@ def spawn_tear(direction,tear,entity):
 def enemy_collisions(self):
     for tear in Giova.tears:
             if detect_collision(tear,self):
-                self.hp-=1
+                self.hp-=Giova.damage
                 tear.die()
                 return 1
     for tear in world.currentroom.enemy_tears:
@@ -98,10 +102,12 @@ class player():
         self.xbound=100
         self.invincibility_timer=0
         self.maxinvincibility_timer=21
-        
+        self.damage = 1
+        self.Giovaimg = ImageTk.PhotoImage(Image.open("Isaac.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
-        self.player_geometry = tk.Canvas(window,bg="blue",height=self.ybound,width=self.xbound)
+        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound)
+        self.player_geometry.create_image(self.xbound/2,self.ybound/2,image=self.Giovaimg)
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
     def update_state(self):
         #If going diagonally
@@ -266,7 +272,7 @@ class Static_Enemy():
         for tear in Giova.tears:
 
             if detect_collision(tear,self):
-                self.hp-=1
+                self.hp-=Giova.damage
                 tear.die()
                 break
     def die(self):
@@ -399,7 +405,6 @@ environment=[]"""
 class PowerUp():
     def __init__(self) -> None:
         self.pos = [0,0]
-        self.characteristic = [Giova.speed,Tear().speed,Giova.hp]
         self.xbound= 100
         self.ybound=100
     def draw(self):
@@ -408,9 +413,17 @@ class PowerUp():
 
     def generate_powerup(self):
         index=random.randint(0,2)
-        self.characteristic[index]+=random.randint(1,10)
+        match index:
+            case 0:
+                Giova.damage+=random.randint(1,4)
+                print(f"Damage:{Giova.damage}")
+            case 1:
+                Giova.hp += 2
+                print(f"HP:{Giova.hp}")
+            case 2:
+                Giova.speed+=random.randint(1,3)
+                print(f"Speed:{Giova.speed}")
         self.die()
-        print(self.characteristic[index])
 
     def die(self):
         world.currentroom.power_up.remove(self)
@@ -552,22 +565,22 @@ class Room():
                 self.door_objects.append(door)
         match self.type:
             case "normal":
-                
-                enemy_number=random.randint(2,5)
-                for i in range(enemy_number):
-                    enemy_type=random.randint(0,2)
-                    match enemy_type:
-                        case 0:
-                            enemy=Static_Enemy()
-                        case 1:
-                            enemy=Follow_Enemy()
-                        case 2:
-                            enemy=Random_Enemy()
-                    self.generate_position(enemy)
-                    self.enemies.append(enemy)
                 #Might be added to other type of room
                 if not self.cleared:
-                    powNum= random.randint(0,2)
+                    enemy_number=random.randint(2,5)
+                    for i in range(enemy_number):
+                        enemy_type=random.randint(0,2)
+                        match enemy_type:
+                            case 0:
+                                enemy=Static_Enemy()
+                            case 1:
+                                enemy=Follow_Enemy()
+                            case 2:
+                                enemy=Random_Enemy()
+                        self.generate_position(enemy)
+                        self.enemies.append(enemy)
+
+                    powNum= random.randint(1,2)
                     for i in range(powNum):
                         powerup = PowerUp()
                         self.generate_position(powerup)
