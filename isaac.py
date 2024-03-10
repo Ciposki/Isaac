@@ -11,6 +11,8 @@ from PIL import ImageTk, Image
 
 random_dir=[-1,-0.5,0,1,0.5]
 window = tk.Tk()
+window.iconphoto(True,ImageTk.PhotoImage(Image.open("Isaac.png")))
+window.title("The Binding of Giovanni")
 width=1920
 height=1080
 window.geometry("1920x1080")
@@ -255,7 +257,6 @@ class Static_Enemy():
         if self.hp<=0:
             self.die()
         else:
-            
             self.detect_collisions()
             self.timer-=1
             if self.timer==0:
