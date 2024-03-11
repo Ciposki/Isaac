@@ -29,6 +29,16 @@ arrows={
 directions=[(0,1),(1,0),(0,-1),(-1,0)]
 door_positions=([width/2,0],[0,height/2],[width/2,height],[width,height/2])
 
+def kill_enemy(object):
+    if random.randint(10,10)==10:
+        coin=Coin()
+        coin.pos=object.pos
+        world.currentroom.coins.append(coin)
+        coin.update()
+    world.currentroom.enemies.remove(object)
+    object.enemy_geometry.place_forget()
+    object.enemy_geometry.delete()
+    object.enemy_geometry.destroy()
 
 def normalize_vector(vector):
     magnitude = sum(i**2 for i in vector)**0.5
@@ -70,6 +80,8 @@ def enemy_collisions(self):
             return 1
     if detect_collision(Giova,self):
         return 2
+    
+
     for object in world.currentroom.environment:
         if detect_collision(object,self):
             return 2
@@ -94,7 +106,7 @@ def rotate(self,deg):
 class player():
     def __init__(self):
         self.direction = [0,0]
-        self.pos = [0,0]
+        self.pos = [width/2,height/2]
         self.speed = 5
         self.tears=[]
         self.hp=60
@@ -105,6 +117,7 @@ class player():
         self.invincibility_timer=0
         self.maxinvincibility_timer=21
         self.damage = 1
+        self.coins=0
         self.Giovaimg = ImageTk.PhotoImage(Image.open("Isaac.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
@@ -149,6 +162,12 @@ class player():
         for powerup in world.currentroom.power_up:
             if detect_collision(powerup,self):
                 powerup.generate_powerup()
+                return 3
+        for coin in world.currentroom.coins:
+            if detect_collision(coin,self):
+                self.coins+=1
+
+                print(self.coins)
                 return 3
         return 0
     def take_damage(self,damage):
@@ -255,7 +274,7 @@ class Static_Enemy():
     def update_state(self):
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.hp<=0:
-            self.die()
+            kill_enemy(self)
         else:
             self.detect_collisions()
             self.timer-=1
@@ -277,10 +296,6 @@ class Static_Enemy():
                 tear.die()
                 break
     def die(self):
-        world.currentroom.enemies.remove(self)
-        self.enemy_geometry.place_forget()
-        self.enemy_geometry.delete()
-        self.enemy_geometry.destroy()
 class Follow_Enemy():
     def __init__(self):
         self.direction=[0,0]
@@ -294,7 +309,7 @@ class Follow_Enemy():
         self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
     def update_state(self):
         if self.hp<=0:
-            self.die()
+            kill_enemy(self)
         else:
             oldpos=self.pos.copy()
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
@@ -305,10 +320,6 @@ class Follow_Enemy():
                 self.pos=oldpos
                     
     def die(self):
-        world.currentroom.enemies.remove(self)
-        self.enemy_geometry.place_forget()
-        self.enemy_geometry.delete()
-        self.enemy_geometry.destroy()
 
 class Random_Enemy():
     def __init__(self):
@@ -326,7 +337,7 @@ class Random_Enemy():
 
     def update_state(self):
         if self.hp<=0:
-            self.die()
+            kill_enemy(self)
         else:
             self.timer-=1
             if self.timer<=0:
@@ -339,12 +350,6 @@ class Random_Enemy():
             self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
             if enemy_collisions(self)==2:
                 self.pos=oldpos
-    def die(self):
-        world.currentroom.enemies.remove(self)
-        self.enemy_geometry.place_forget()
-        self.enemy_geometry.delete()
-        self.enemy_geometry.destroy()
-
 
 class Wall():
     def __init__(self):
@@ -352,15 +357,31 @@ class Wall():
         self.ybound=100
         self.xbound=100
         self.enemy_geometry = tk.Canvas(window,bg="black",height=100,width=100)
-        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def update(self):
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def die(self):
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
-
+        #self.enemy_geometry.destroy()
         world.currentroom.environment.remove(self)
         
+
+class Coin():
+    def __init__(self):
+            self.pos=[900,500]
+            self.ybound=25
+            self.xbound=25
+            self.geometry = tk.Canvas(window,bg="yellow",height=self.xbound,width=self.ybound)
+    def update(self):
+            world.currentroom.coins.append(self)
+            self.geometry.place(x=self.pos[0],y=self.pos[1])
+    def die(self):
+        self.geometry.place_forget()
+        self.geometry.delete()
+        world.currentroom.coins.remove(self)
+            
+
+
 
 def input(event):
     pressed=event.keycode
@@ -408,13 +429,15 @@ class PowerUp():
         self.pos = [0,0]
         self.xbound= 100
         self.ybound=100
+        self.index=random.randint(0,2)
     def draw(self):
         self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
         self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
 
     def generate_powerup(self):
-        index=random.randint(0,2)
-        match index:
+        world.currentroom.cleared=True
+        
+        match self.index:
             case 0:
                 Giova.damage+=random.randint(1,4)
                 print(f"Damage:{Giova.damage}")
@@ -433,8 +456,132 @@ class PowerUp():
         self.powerup_geometry.destroy()
 
     
+"""
+This generates a phantom block
+"""
+environment_options=[[Wall()],[]]
 
-environment_options=[[Wall(),Wall()],[]]
+                            newroom_coordinates=(room_coordinates[0]+directions[door_direction][0],room_coordinates[1]+directions[door_direction][1])
+
+
+
+
+class Room():
+    def __init__(self):
+        self.doors=[None]*4
+        self.door_objects=[]
+        self.enemies=[]
+        self.power_up=[]
+        self.environment=[]
+        self.enemy_tears=[]
+        self.coins=[]
+        self.cleared=False
+        self.coordinates=[0,0]
+        self.type="normal"
+        self.env_type=random.choice(environment_options)
+        print(self.env_type)
+
+    def generate_position(self, enemy):
+        """
+        This should be rewritten
+        """
+        enemy.pos= [random.randint(150,1800), random.randint(150,950)]
+        objectt=0
+        
+        for objectt in (self.environment):
+            if detect_collision(enemy,objectt):
+                self.generate_position(enemy)
+                return      
+        for objectt in self.enemies:
+            if detect_collision(enemy,objectt):
+                self.generate_position(enemy)
+                return 
+
+    def generate(self,world):
+        #Spawning doors
+        self.environment=self.env_type.copy()
+        
+        print(self.environment,self.env_type)
+        for obj in self.environment:
+            obj.update()
+        for i in range(4):
+            if self.doors[i]==1:
+                door=Door()
+                door.pos=door_positions[i].copy()            
+                rotate(door,i)
+                door.direction=i
+                match world.rooms[(self.coordinates[0]+directions[i][0],self.coordinates[1]+directions[i][1])].type:
+                    case "boss":
+                        door.color="purple"
+                    case "shop":
+                        door.color="orange"
+                    case "treasure":
+                        door.color="yellow"
+                door.spawn()
+                
+                self.door_objects.append(door)
+            
+            
+        match self.type:
+            case "normal":
+                #Might be added to other type of room
+                if not self.cleared:
+                    enemy_number=random.randint(2,5)
+                    for i in range(enemy_number):
+                        enemy_type=random.randint(0,2)
+                        match enemy_type:
+                            case 0:
+                                enemy=Static_Enemy()
+                            case 1:
+                                enemy=Follow_Enemy()
+                            case 2:
+                                enemy=Random_Enemy()
+                        self.generate_position(enemy)
+                        self.enemies.append(enemy)
+
+                    
+            case "shop":
+                ...
+            case "boss":
+                ...
+            case "treasure":
+                if not self.cleared:
+                    powNum= random.randint(1,2)
+                    for i in range(powNum):
+                        powerup = PowerUp()
+                        self.generate_position(powerup)
+                        powerup.draw()
+                        self.power_up.append(powerup)
+                        print("spawned")
+            
+    
+
+class Door():
+    def __init__(self) -> None:
+        self.xbound=100
+        self.ybound=20
+        self.pos=[0,0]
+        self.direction=0
+        self.color="brown"
+    def spawn(self):
+        self.door_geometry = tk.Canvas(window,bg=self.color,height=self.ybound,width=self.xbound)
+        self.door_geometry.place(x=self.pos[0],y=self.pos[1])
+    
+    def detect_collision(self):
+        
+        if world.currentroom.cleared ==True and detect_collision(Giova,self):
+            print("AAAAAAAAA")
+            
+            world.newroom(self.direction)
+            
+    def die(self):
+        world.currentroom.door_objects.remove(self)
+        self.door_geometry.place_forget()
+        self.door_geometry.delete()
+        self.door_geometry.destroy()
+
+
+
 class World():
     def __init__(self):
         self.max_rooms=random.randint(6,11)
@@ -490,7 +637,8 @@ class World():
                                 self.frontier.append(newroom_coordinates)
                             self.rooms[newroom_coordinates].doors[(door_direction+2)%4]=1
                             newroom.coordinates=newroom_coordinates
-        self.currentroom.generate()
+        self.currentroom.type="start"
+        self.currentroom.generate(self)
     def newroom(self,direction):
         while self.currentroom.enemies:
             self.currentroom.enemies[0].die()
@@ -507,120 +655,11 @@ class World():
         self.currentroom=self.rooms[self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1]]
         direction=(direction+2)%4
         Giova.Door_Move(direction)
-        self.currentroom.generate()
+        self.currentroom.generate(self)
+world=World()      
         
         
-        
 
-
-
-class Room():
-    def __init__(self):
-        self.doors=[None]*4
-        self.door_objects=[]
-        self.enemies=[]
-        self.power_up=[]
-        self.environment=[]
-        self.enemy_tears=[]
-        self.cleared=False
-        self.coordinates=[0,0]
-        self.type="normal"
-        self.env_type=random.choice(environment_options)
-        print(self.env_type)
-
-    def generate_position(self, enemy):
-        """
-        This should be rewritten
-        """
-        enemy.pos= [random.randint(150,1800), random.randint(150,950)]
-        objectt=0
-        
-        while objectt < (len(self.environment)):
-            if detect_collision(enemy,self.environment[objectt]):
-                enemy.pos= [random.randint(150,1800), random.randint(150,950)]
-                objectt=0
-            objectt+=1
-        objectt=0
-        while objectt<len(self.enemies):
-            if detect_collision(enemy,self.enemies[objectt]):
-                enemy.pos= [random.randint(150,1800), random.randint(150,950)]
-                objectt=0
-            objectt+=1
-            
-
-    def generate(self):
-        #Spawning doors
-        self.environment=self.env_type.copy()
-        
-        print(self.environment,self.env_type)
-        for obj in self.environment:
-            obj.update()
-        for i in range(4):
-            if self.doors[i]==1:
-                door=Door()
-                door.pos=door_positions[i].copy()            
-                rotate(door,i)
-                door.direction=i
-                door.spawn()
-
-                self.door_objects.append(door)
-        match self.type:
-            case "normal":
-                #Might be added to other type of room
-                if not self.cleared:
-                    enemy_number=random.randint(2,5)
-                    for i in range(enemy_number):
-                        enemy_type=random.randint(0,2)
-                        match enemy_type:
-                            case 0:
-                                enemy=Static_Enemy()
-                            case 1:
-                                enemy=Follow_Enemy()
-                            case 2:
-                                enemy=Random_Enemy()
-                        self.generate_position(enemy)
-                        self.enemies.append(enemy)
-
-                    powNum= random.randint(1,2)
-                    for i in range(powNum):
-                        powerup = PowerUp()
-                        self.generate_position(powerup)
-                        powerup.draw()
-                        self.power_up.append(powerup)
-                        print("spawned")
-            case "shop":
-                ...
-            case "boss":
-                ...
-            case "treasure":
-                ...
-    
-
-class Door():
-    def __init__(self) -> None:
-        self.xbound=100
-        self.ybound=20
-        self.pos=[0,0]
-        self.direction=0
-    def spawn(self):
-        self.door_geometry = tk.Canvas(window,bg="brown",height=self.ybound,width=self.xbound)
-        self.door_geometry.place(x=self.pos[0],y=self.pos[1])
-    
-    def detect_collision(self):
-        
-        if world.currentroom.cleared ==True and detect_collision(Giova,self):
-            print("AAAAAAAAA")
-            
-            world.newroom(self.direction)
-            
-    def die(self):
-        world.currentroom.door_objects.remove(self)
-        self.door_geometry.place_forget()
-        self.door_geometry.delete()
-        self.door_geometry.destroy()
-
-
-world=World()    
 
 
 update()
