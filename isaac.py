@@ -1,5 +1,6 @@
 #TODO Fix Input(you cant move and shoot at the same time)
 # Random enemy collisions are broken
+#Fix coin pickups being doubled
 
 import tkinter as tk
 import math
@@ -28,7 +29,7 @@ arrows={
 }
 directions=[(0,1),(1,0),(0,-1),(-1,0)]
 door_positions=([width/2,0],[0,height/2],[width/2,height],[width,height/2])
-
+powerup_positions=[[360,500],[960,500],[1560,500]]
 def kill_enemy(object):
     if random.randint(10,10)==10:
         coin=Coin()
@@ -352,7 +353,7 @@ class Random_Enemy():
 
 class Wall():
     def __init__(self):
-        self.pos=[500,500]
+        self.pos=[300,500]
         self.ybound=100
         self.xbound=100
         self.enemy_geometry = tk.Canvas(window,bg="black",height=100,width=100)
@@ -367,6 +368,7 @@ class Wall():
 
 class Coin():
     def __init__(self):
+            
             self.pos=[900,500]
             self.ybound=25
             self.xbound=25
@@ -374,6 +376,7 @@ class Coin():
     def update(self):
             world.currentroom.coins.append(self)
             self.geometry.place(x=self.pos[0],y=self.pos[1])
+            self.geometry.lower()
     def die(self):
         self.geometry.place_forget()
         self.geometry.delete()
@@ -429,24 +432,32 @@ class PowerUp():
         self.xbound= 100
         self.ybound=100
         self.index=random.randint(0,2)
+        self.price=0
     def draw(self):
         self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
         self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
+        if self.price>0:
+            text = tk.Label(window, text =self.price,)
+            text.config(font =("Courier", 14))
+            text.lower()
+            text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
+            
 
     def generate_powerup(self):
         world.currentroom.cleared=True
-        
-        match self.index:
-            case 0:
-                Giova.damage+=random.randint(1,4)
-                print(f"Damage:{Giova.damage}")
-            case 1:
-                Giova.hp += 2
-                print(f"HP:{Giova.hp}")
-            case 2:
-                Giova.speed+=random.randint(1,3)
-                print(f"Speed:{Giova.speed}")
-        self.die()
+        if Giova.coins>=self.price:
+            Giova.coins-=self.price
+            match self.index:
+                case 0:
+                    Giova.damage+=random.randint(1,4)
+                    print(f"Damage:{Giova.damage}")
+                case 1:
+                    Giova.hp += 2
+                    print(f"HP:{Giova.hp}")
+                case 2:
+                    Giova.speed+=random.randint(1,3)
+                    print(f"Speed:{Giova.speed}")
+            self.die()
 
     def die(self):
         world.currentroom.power_up.remove(self)
@@ -477,7 +488,6 @@ class Room():
         self.coordinates=[0,0]
         self.type="normal"
         self.env_type=random.choice(environment_options)
-        print(self.env_type)
 
     def generate_position(self, enemy):
         """
@@ -539,7 +549,16 @@ class Room():
 
                     
             case "shop":
-                ...
+                if not self.cleared:
+                    for i in range(3):
+                        price=random.randint(3,7)
+                        powerup = PowerUp()
+                        powerup.price=price
+                        powerup.pos=powerup_positions[i]
+                        powerup.draw()
+                        self.power_up.append(powerup)
+                        print("spawned")
+                            
             case "boss":
                 ...
             case "treasure":
@@ -547,7 +566,7 @@ class Room():
                     powNum= random.randint(1,2)
                     for i in range(powNum):
                         powerup = PowerUp()
-                        self.generate_position(powerup)
+                        powerup.pos=powerup_positions[i]
                         powerup.draw()
                         self.power_up.append(powerup)
                         print("spawned")
@@ -646,6 +665,8 @@ class World():
             self.currentroom.environment[0].die()
         while self.currentroom.door_objects:
             self.currentroom.door_objects[0].die()
+        while self.currentroom.coins:
+            self.currentroom.coins[0].die()
         while Giova.tears:
             Giova.tears[0].die()
         while self.currentroom.power_up:
