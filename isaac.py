@@ -134,7 +134,7 @@ class player():
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.teartimer<self.maxteartimer:
             self.teartimer+=1
-        if self.detect_collisions()==2:
+        if self.detect_collisions()==2 or(self.pos[0]<0) or(self.pos[1]<0) or (self.pos[0]+self.xbound>width) or (self.pos[1]+self.ybound>height):
             self.pos=oldpos
 
         """
@@ -165,6 +165,8 @@ class player():
                 return 3
         for coin in world.currentroom.coins:
             if detect_collision(coin,self):
+
+                coin.die()
                 self.coins+=1
 
                 print(self.coins)
@@ -295,7 +297,6 @@ class Static_Enemy():
                 self.hp-=Giova.damage
                 tear.die()
                 break
-    def die(self):
 class Follow_Enemy():
     def __init__(self):
         self.direction=[0,0]
@@ -318,8 +319,6 @@ class Follow_Enemy():
             self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
             if enemy_collisions(self)==2:
                 self.pos=oldpos
-                    
-    def die(self):
 
 class Random_Enemy():
     def __init__(self):
@@ -461,7 +460,6 @@ This generates a phantom block
 """
 environment_options=[[Wall()],[]]
 
-                            newroom_coordinates=(room_coordinates[0]+directions[door_direction][0],room_coordinates[1]+directions[door_direction][1])
 
 
 
