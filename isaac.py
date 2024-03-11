@@ -106,6 +106,7 @@ def rotate(self,deg):
 class player():
     def __init__(self):
         self.direction = [0,0]
+        self.lastdir= [0,0]
         self.pos = [width/2,height/2]
         self.speed = 5
         self.tears=[]
@@ -118,7 +119,7 @@ class player():
         self.maxinvincibility_timer=21
         self.damage = 1
         self.coins=0
-        self.Giovaimg = ImageTk.PhotoImage(Image.open("Isaac.png").resize((self.xbound,self.ybound)))
+        self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
         self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound)
@@ -127,6 +128,7 @@ class player():
     def update_state(self):
         #If going diagonally
         oldpos=self.pos.copy()
+        self.lastdir=self.direction.copy()
         if self.direction[0]&self.direction[1]:
             self.pos = [self.pos[0]+self.direction[0]*self.speed*math.sqrt(2)/2,self.pos[1]+self.direction[1]*self.speed*math.sqrt(2)/2]
         else:
@@ -386,14 +388,30 @@ def input(event):
     pressed=event.keycode
     if pressed in orientations:
         rotate=orientations[pressed]
-        Giova.direction[rotate[0]]=rotate[1]
-        #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")   
-       
+        Giova.direction[rotate[0]]=rotate[1]        
+        print(Giova.direction,Giova.lastdir)
+        
+
+                           
+            #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")   
     elif pressed in arrows and Giova.teartimer==Giova.maxteartimer:
         Giova.teartimer=0
         new_tear=Tear()
         spawn_tear(pressed,new_tear,Giova)
         Giova.tears.append(new_tear)
+        match pressed:
+            case 37:
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+            case 38:
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("back.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+            case 39:
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("destra.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+            case 40:
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
 def release(event):
     pressed=event.keycode
     if pressed in orientations:
