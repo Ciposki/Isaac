@@ -119,7 +119,7 @@ class player():
         self.invincibility_timer=0
         self.maxinvincibility_timer=21
         self.damage = 1
-        self.coins=0
+        self.coins=10
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
@@ -378,7 +378,6 @@ class Coin():
     def update(self):
             world.currentroom.coins.append(self)
             self.geometry.place(x=self.pos[0],y=self.pos[1])
-            self.geometry.lower()
     def die(self):
         self.geometry.place_forget()
         self.geometry.delete()
@@ -392,10 +391,6 @@ def input(event):
     if pressed in orientations:
         rotate=orientations[pressed]
         Giova.direction[rotate[0]]=rotate[1]        
-        print(Giova.direction,Giova.lastdir)
-        
-
-                           
             #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")   
     elif pressed in arrows and Giova.teartimer==Giova.maxteartimer:
         Giova.teartimer=0
@@ -450,15 +445,17 @@ class PowerUp():
         self.xbound= 100
         self.ybound=100
         self.index=random.randint(0,2)
+        self.text=0
         self.price=0
+        
     def draw(self):
         self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
         self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.price>0:
-            text = tk.Label(window, text =self.price,)
-            text.config(font =("Courier", 14))
-            text.lower()
-            text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
+            self.text=tk.Label(window, text =self.price)
+            self.text.config(font =("Courier", 14))
+            self.text.lower()
+            self.text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
             
 
     def generate_powerup(self):
@@ -479,9 +476,11 @@ class PowerUp():
 
     def die(self):
         world.currentroom.power_up.remove(self)
+        self.text.destroy()
         self.powerup_geometry.place_forget()
         self.powerup_geometry.delete()
         self.powerup_geometry.destroy()
+        
 
     
 """
