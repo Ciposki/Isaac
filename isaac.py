@@ -27,11 +27,12 @@ arrows={
     39:(0,1),#→
     40:(1,1)#↓    
 }
+shooting = False
 directions=[(0,1),(1,0),(0,-1),(-1,0)]
 door_positions=([width/2,0],[0,height/2],[width/2,height],[width,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 def kill_enemy(object):
-    if random.randint(10,10)==10:
+    if random.randint(5,10)==10:
         coin=Coin()
         coin.pos=object.pos
         world.currentroom.coins.append(coin)
@@ -119,7 +120,7 @@ class player():
         self.invincibility_timer=0
         self.maxinvincibility_timer=21
         self.damage = 1
-        self.coins=10
+        self.coins=0
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
@@ -170,7 +171,7 @@ class player():
             if detect_collision(coin,self):
 
                 coin.die()
-                self.coins+=1
+                self.coins+=0.5
 
                 print(self.coins)
                 return 3
@@ -391,7 +392,24 @@ def input(event):
     if pressed in orientations:
         rotate=orientations[pressed]
         Giova.direction[rotate[0]]=rotate[1]        
-            #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")   
+            #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")
+        if not shooting and Giova.lastdir!=Giova.direction:
+            if Giova.direction[1] == -1 :
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("back.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+            elif Giova.direction[1] == 1:
+                Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg) 
+            else:
+                if Giova.direction[0] == 1:
+                    Giova.Giovaimg = ImageTk.PhotoImage(Image.open("destra.png").resize((Giova.xbound,Giova.ybound)))
+                    Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+                elif Giova.direction[0] == -1:
+                    Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
+                    Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+                    
+
+                      
     elif pressed in arrows and Giova.teartimer==Giova.maxteartimer:
         Giova.teartimer=0
         new_tear=Tear()
@@ -409,13 +427,16 @@ def input(event):
                 Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
             case 40:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
+                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)   
 def release(event):
+    global shooting
     pressed=event.keycode
     if pressed in orientations:
         rotate=orientations[pressed]
         Giova.direction[rotate[0]]=0
         #print(f"Deleting state keycode:{pressed}, rotation {Giova.direction}")
+    if pressed in arrows:
+        shooting = False
 
 def update():
     Giova.update_state()
@@ -476,7 +497,8 @@ class PowerUp():
 
     def die(self):
         world.currentroom.power_up.remove(self)
-        self.text.destroy()
+        if self.price>0:
+            self.text.destroy()
         self.powerup_geometry.place_forget()
         self.powerup_geometry.delete()
         self.powerup_geometry.destroy()
