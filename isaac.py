@@ -16,6 +16,10 @@ window.iconphoto(True,ImageTk.PhotoImage(Image.open("Isaac.png")))
 window.title("The Binding of Giovanni")
 width=1920
 height=1080
+bg = tk.Canvas(window,width=1920,height=1080,background="blue")
+roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), ImageTk.PhotoImage(Image.open("room1.png").resize((width,height)))]
+sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
+window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
 orientations={87:(1,-1),#W
               65:(0,-1),#A
@@ -124,8 +128,8 @@ class player():
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
-        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound)
-        self.player_geometry.create_image(self.xbound/2,self.ybound/2,image=self.Giovaimg)
+        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound,background="#add123")
+        self.player_geometry.create_image(self.xbound/2,self.ybound/2)
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
     def update_state(self):
         #If going diagonally
@@ -375,6 +379,7 @@ class Coin():
             self.pos=[900,500]
             self.ybound=25
             self.xbound=25
+            self.coinimg= ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
             self.geometry = tk.Canvas(window,bg="yellow",height=self.xbound,width=self.ybound)
     def update(self):
             world.currentroom.coins.append(self)
@@ -527,7 +532,8 @@ class Room():
         self.coordinates=[0,0]
         self.type="normal"
         self.env_type=random.choice(environment_options)
-
+        self.roomimg = roomsimgs[random.randint(0,1)]
+        bg.place(y=0,x=0)
     def generate_position(self, enemy):
         """
         This should be rewritten
@@ -545,6 +551,8 @@ class Room():
                 return 
 
     def generate(self,world):
+        global sfondo
+        sfondo = bg.create_image(width/2,height/2,image=self.roomimg)
         #Spawning doors
         self.environment=self.env_type.copy()
         
@@ -696,6 +704,7 @@ class World():
         self.currentroom.type="start"
         self.currentroom.generate(self)
     def newroom(self,direction):
+        
         while self.currentroom.enemies:
             self.currentroom.enemies[0].die()
         while self.currentroom.enemy_tears:
