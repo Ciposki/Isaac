@@ -8,10 +8,12 @@ import random
 import sys
 from PIL import ImageTk, Image
 
-
+room_xbound=130
+room_ybound=140
 
 random_dir=[-1,-0.5,0,1,0.5]
 window = tk.Tk()
+window.attributes("-fullscreen",False)
 window.iconphoto(True,ImageTk.PhotoImage(Image.open("Isaac.png")))
 window.title("The Binding of Giovanni")
 width=1920
@@ -33,7 +35,7 @@ arrows={
 }
 shooting = False
 directions=[(0,1),(1,0),(0,-1),(-1,0)]
-door_positions=([width/2,0],[0,height/2],[width/2,height],[width,height/2])
+door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 def kill_enemy(object):
     if random.randint(5,10)==10:
@@ -123,13 +125,13 @@ class player():
         self.xbound=100
         self.invincibility_timer=0
         self.maxinvincibility_timer=21
-        self.damage = 1
+        self.damage = 100
         self.coins=0
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.init_draw()
     def init_draw(self):
-        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound,background="#add123")
-        self.player_geometry.create_image(self.xbound/2,self.ybound/2)
+        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound,background="black")
+        self.player_geometry.create_image(self.xbound/2,self.ybound/2,image=self.Giovaimg)
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
     def update_state(self):
         #If going diagonally
@@ -142,7 +144,7 @@ class player():
         self.player_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.teartimer<self.maxteartimer:
             self.teartimer+=1
-        if self.detect_collisions()==2 or(self.pos[0]<0) or(self.pos[1]<0) or (self.pos[0]+self.xbound>width) or (self.pos[1]+self.ybound>height):
+        if self.detect_collisions()==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
             self.pos=oldpos
 
         """
@@ -194,15 +196,15 @@ class player():
         match direction:
             case 0:
                 self.pos[0]=width/2-doorxbound/2
-                self.pos[1]=margin
+                self.pos[1]=margin+room_xbound
             case 1:
-                self.pos[0]=margin
+                self.pos[0]=margin+room_ybound
                 self.pos[1]=(height-self.ybound)/2
             case 2:
-                self.pos[1]=height-self.ybound-margin
+                self.pos[1]=height-self.ybound-margin-room_ybound
                 self.pos[0]=(width-doorxbound)/2
             case 3:
-                self.pos[0]=width-self.xbound-margin
+                self.pos[0]=width-self.xbound-margin-room_xbound
                 self.pos[1]=(height-self.ybound)/2
 class Tear():
     def __init__(self):
@@ -445,6 +447,7 @@ def release(event):
 
 def update():
     Giova.update_state()
+    print(Giova.pos)
     for single_tear in Giova.tears:
         single_tear.update_state()
     for enemy in world.currentroom.enemies:
@@ -480,7 +483,7 @@ class PowerUp():
         if self.price>0:
             self.text=tk.Label(window, text =self.price)
             self.text.config(font =("Courier", 14))
-            self.text.lower()
+            #self.text.lower()
             self.text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
             
 
@@ -538,7 +541,7 @@ class Room():
         """
         This should be rewritten
         """
-        enemy.pos= [random.randint(150,1800), random.randint(150,950)]
+        enemy.pos= [random.randint(room_xbound+150,width-room_xbound-150), random.randint(room_ybound+150,height-room_ybound-150)]
         objectt=0
         
         for objectt in (self.environment):
@@ -648,7 +651,7 @@ class Door():
 
 class World():
     def __init__(self):
-        self.max_rooms=random.randint(6,11)
+        self.max_rooms=random.randint(10,15)
         self.generated_rooms=1
         self.current_boss_rooms=0
         self.current_treasure_rooms=0
@@ -674,21 +677,21 @@ class World():
                                 #generate a room
                                 self.generated_rooms+=1
                                 if self.current_boss_rooms==0:
-                                    boss_chance=random.randint(self.generated_rooms,20)
+                                    boss_chance=random.randint(1,5)
                                 if self.current_treasure_rooms<=1:
                                     treasure_chance=random.randint(0,4)
                                 if self.current_shop_rooms==0:
-                                    shop_chance=random.randint(0,4)
+                                    shop_chance=random.randint(0,5)
                                 
                                 #this is to ensure we get a boss room
                                 newroom=Room()
                                 self.rooms[newroom_coordinates]=newroom
-                                if boss_chance>=17 or (self.max_rooms-self.generated_rooms<=2 and self.current_boss_rooms==0):
+                                if boss_chance+current_room.coordinates[0]+current_room.coordinates[1]>=10 or (self.max_rooms-self.generated_rooms<=2 and self.current_boss_rooms==0):
                                     self.current_boss_rooms+=1
                                     newroom.type="boss"
 
                                     boss_chance=0
-                                elif treasure_chance==4:
+                                elif treasure_chance+current_room.coordinates[0]+current_room.coordinates[1]>=8:
                                     self.current_treasure_rooms+=1
                                     newroom.type="treasure"
                                     treasure_chance=0
