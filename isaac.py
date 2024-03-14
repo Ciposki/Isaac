@@ -3,6 +3,7 @@
 #Fix coin pickups being doubled
 
 import tkinter as tk
+import tkinter.font as font
 import math
 import random
 import sys
@@ -23,6 +24,11 @@ roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), Imag
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
+
+
+
+menu =True
+
 orientations={87:(1,-1),#W
               65:(0,-1),#A
               83:(1,1),#S
@@ -37,6 +43,8 @@ shooting = False
 directions=[(0,1),(1,0),(0,-1),(-1,0)]
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
+
+
 def kill_enemy(object):
     if random.randint(5,10)==10:
         coin=Coin()
@@ -111,6 +119,38 @@ def rotate(self,deg):
                 self.xbound,self.ybound=self.ybound,self.xbound
                 self.pos[0]-=self.xbound
                 self.pos[1]-=self.ybound/2
+class Menu():
+    def __init__(self) -> None:
+        self.font = font.Font(size=30)
+        self.menubg=tk.Canvas(width=width,height=height,bg="Black")
+        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=self.font,bg="blue",activebackground="red",)
+        self.quitbtn = tk.Button(window,text="Quit",command=window.destroy,relief="ridge",font=self.font,bg="blue",activebackground="red",)
+        self.Quit =  False
+        self.xbound =800
+        self.ybound=100
+        self.place()
+        
+    def place(self):
+        self.menubg.place(x=0, y= 0)
+        self.playbtn.place(x=width/2-self.xbound/2,y=500,width=self.xbound,height=self.ybound)
+        self.quitbtn.place(x=width/2-self.xbound/2,y=650,width=self.xbound,height=self.ybound)
+        
+        
+    
+    def play(self):
+        global menu
+        menu = False
+        self.die()
+        pass
+    
+    def die(self):
+        self.menubg.destroy()
+        self.playbtn.destroy()
+        self.quitbtn.destroy()
+
+
+
+        
 class player():
     def __init__(self):
         self.direction = [0,0]
@@ -729,10 +769,13 @@ class World():
 world=World()      
         
         
+if menu:
+    Menuobj =Menu()
+    if Menuobj.Quit:
+        pass
+if not menu:
+    update()
+    window.bind("<KeyPress>",input)
+    window.bind("<KeyRelease>",release)
 
-
-
-update()
-window.bind("<KeyPress>",input)
-window.bind("<KeyRelease>",release)
 window.mainloop()
