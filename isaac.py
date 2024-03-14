@@ -278,8 +278,8 @@ class Static_Enemy():
         self.pos=[700,350]
         self.ybound=100
         self.xbound=100
-        self.timer=100
-        self.timerdefault=100
+        self.timer=random.randint(1,99)
+        self.timerdefault=random.randint(80,120)
         self.hp=4
         self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
         
@@ -337,7 +337,7 @@ class Random_Enemy():
         self.pos=[800,700]
         self.ybound=100
         self.xbound=100
-        self.timer=20
+        self.timer=random.randint(0,19)
         self.timerdefault=20
         self.hp=10
         self.random=[1,1]
