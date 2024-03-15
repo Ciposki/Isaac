@@ -27,7 +27,7 @@ window.geometry("1920x1080")
 
 
 
-menu =True
+ismenu =True
 
 orientations={87:(1,-1),#W
               65:(0,-1),#A
@@ -121,11 +121,15 @@ def rotate(self,deg):
                 self.pos[1]-=self.ybound/2
 class Menu():
     def __init__(self) -> None:
-        self.font = font.Font(size=30)
+        self.font = font.Font(size=50,family="hooge 05_55")
+        self.titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
         self.menubg=tk.Canvas(width=width,height=height,bg="Black")
-        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=self.font,bg="blue",activebackground="red",)
-        self.quitbtn = tk.Button(window,text="Quit",command=window.destroy,relief="ridge",font=self.font,bg="blue",activebackground="red",)
-        self.Quit =  False
+        self.sfondo = self.menubg.create_image(width/2,height/2,image=roomsimgs[0])
+        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=self.titleFont,fill="#FEFAE0")
+        
+        
+        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
+        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
         self.xbound =800
         self.ybound=100
         self.place()
@@ -138,8 +142,9 @@ class Menu():
         
     
     def play(self):
-        global menu
-        menu = False
+        global ismenu
+        ismenu = False
+        
         self.die()
         pass
     
@@ -267,8 +272,10 @@ class Tear():
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed+self.momentum[0],self.pos[1]+self.direction[1]*self.speed+self.momentum[1]]
             self.tear_geometry.place(x=self.pos[0],y=self.pos[1])
+            if (self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
+                self.die()
             for obj in world.currentroom.environment:
-                if detect_collision(self,obj) and self in Giova.tears:
+                if detect_collision(self,obj)and self in Giova.tears:
                     self.die()
 
     def die(self):
@@ -486,18 +493,18 @@ def release(event):
         shooting = False
 
 def update():
-    Giova.update_state()
-    print(Giova.pos)
-    for single_tear in Giova.tears:
-        single_tear.update_state()
-    for enemy in world.currentroom.enemies:
-        enemy.update_state()
-    if not world.currentroom.enemies:
-        world.currentroom.cleared=True
-    for enemy_tear in world.currentroom.enemy_tears:
-        enemy_tear.update_state()
-    for door in world.currentroom.door_objects:
-        door.detect_collision()
+    if not ismenu:
+        Giova.update_state()
+        for single_tear in Giova.tears:
+            single_tear.update_state()
+        for enemy in world.currentroom.enemies:
+            enemy.update_state()
+        if not world.currentroom.enemies:
+            world.currentroom.cleared=True
+        for enemy_tear in world.currentroom.enemy_tears:
+            enemy_tear.update_state()
+        for door in world.currentroom.door_objects:
+            door.detect_collision()
     window.after(20,update)
 
 
@@ -767,15 +774,9 @@ class World():
         Giova.Door_Move(direction)
         self.currentroom.generate(self)
 world=World()      
-        
-        
-if menu:
-    Menuobj =Menu()
-    if Menuobj.Quit:
-        pass
-if not menu:
-    update()
-    window.bind("<KeyPress>",input)
-    window.bind("<KeyRelease>",release)
+Menuobj =Menu()
 
+update()
+window.bind("<KeyPress>",input)
+window.bind("<KeyRelease>",release)
 window.mainloop()
