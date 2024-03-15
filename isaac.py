@@ -1,7 +1,7 @@
 #TODO Fix Input(you cant move and shoot at the same time)
 # Random enemy collisions are broken
 #Fix coin pickups being doubled
-
+#Gli sfondi non sono allineati
 import tkinter as tk
 import tkinter.font as font
 import math
@@ -19,7 +19,7 @@ window.iconphoto(True,ImageTk.PhotoImage(Image.open("Isaac.png")))
 window.title("The Binding of Giovanni")
 width=1920
 height=1080
-bg = tk.Canvas(window,width=1920,height=1080,background="blue")
+bg = tk.Canvas(window,width=1920,height=1080,background="black")
 roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), ImageTk.PhotoImage(Image.open("room1.png").resize((width,height)))]
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
@@ -173,12 +173,14 @@ class player():
         self.damage = 100
         self.coins=0
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
+        self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
+
         self.init_draw()
     def init_draw(self):
-        self.player_geometry = tk.Canvas(height=self.ybound,width=self.xbound,background="black")
-        self.player_geometry.create_image(self.xbound/2,self.ybound/2,image=self.Giovaimg)
-        self.player_geometry.place(x=self.pos[0],y=self.pos[1])
+        bg.delete(self.player_geometry)
+        self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
     def update_state(self):
+        
         #If going diagonally
         oldpos=self.pos.copy()
         self.lastdir=self.direction.copy()
@@ -186,7 +188,11 @@ class player():
             self.pos = [self.pos[0]+self.direction[0]*self.speed*math.sqrt(2)/2,self.pos[1]+self.direction[1]*self.speed*math.sqrt(2)/2]
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
-        self.player_geometry.place(x=self.pos[0],y=self.pos[1])
+        #self.player_geometry.place(x=self.pos[0],y=self.pos[1])
+        delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+        if delta[0]!=0 or delta[1]!=0:
+            #bg.move(self.player_geometry,delta[0],delta[1])
+            bg.moveto(self.player_geometry,self.pos[0],self.pos[1])
         if self.teartimer<self.maxteartimer:
             self.teartimer+=1
         if self.detect_collisions()==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
@@ -224,7 +230,7 @@ class player():
                 coin.die()
                 self.coins+=0.5
 
-                print(self.coins)
+                #print(self.coins)
                 return 3
         return 0
     def take_damage(self,damage):
@@ -263,8 +269,7 @@ class Tear():
         self.init_draw()
 
     def init_draw(self):
-        self.tear_geometry = tk.Canvas(window,bg="green",height=self.ybound,width=self.xbound)
-        
+        self.tear_geometry = tk.Canvas(window,bg="cyan",height=self.ybound,width=self.xbound)
     def update_state(self):
         self.timer-=1
         if self.timer<=0:
@@ -404,8 +409,24 @@ class Random_Enemy():
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed*self.random[0],self.pos[1]+self.direction[1]*self.speed*self.random[0]]
             self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
-            if enemy_collisions(self)==2:
+            #we can remove the boundary checks for more performance but possibly out of bounds enemies
+            if enemy_collisions(self)==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.pos=oldpos
+
+
+class Boss():
+    def __init__(self):
+        self.ybound=100
+        self.xbound=100
+        self.hp=60
+
+
+
+
+
+
+
+
 
 class Wall():
     def __init__(self):
@@ -451,17 +472,13 @@ def input(event):
         if not shooting and Giova.lastdir!=Giova.direction:
             if Giova.direction[1] == -1 :
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("back.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
             elif Giova.direction[1] == 1:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg) 
             else:
                 if Giova.direction[0] == 1:
                     Giova.Giovaimg = ImageTk.PhotoImage(Image.open("destra.png").resize((Giova.xbound,Giova.ybound)))
-                    Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
                 elif Giova.direction[0] == -1:
                     Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
-                    Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
                     
 
                       
@@ -473,16 +490,14 @@ def input(event):
         match pressed:
             case 37:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
             case 38:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("back.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
             case 39:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("destra.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)
             case 40:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
-                Giova.player_geometry.create_image(Giova.xbound/2,Giova.ybound/2,image=Giova.Giovaimg)   
+    
+    Giova.init_draw()
 def release(event):
     global shooting
     pressed=event.keycode
@@ -589,7 +604,8 @@ class Room():
         """
         This should be rewritten
         """
-        enemy.pos= [random.randint(room_xbound+150,width-room_xbound-150), random.randint(room_ybound+150,height-room_ybound-150)]
+        bound=300
+        enemy.pos= [random.randint(room_xbound+bound,width-room_xbound-bound), random.randint(room_ybound+bound,height-room_ybound-bound)]
         objectt=0
         
         for objectt in (self.environment):
@@ -603,11 +619,13 @@ class Room():
 
     def generate(self,world):
         global sfondo
+        bg.delete(sfondo)
         sfondo = bg.create_image(width/2,height/2,image=self.roomimg)
         #Spawning doors
+        Giova.init_draw()
         self.environment=self.env_type.copy()
         
-        print(self.environment,self.env_type)
+        #print(self.environment,self.env_type)
         for obj in self.environment:
             obj.update()
         for i in range(4):
@@ -685,7 +703,7 @@ class Door():
     def detect_collision(self):
         
         if world.currentroom.cleared ==True and detect_collision(Giova,self):
-            print("AAAAAAAAA")
+            #print("AAAAAAAAA")
             
             world.newroom(self.direction)
             
@@ -726,7 +744,7 @@ class World():
                                 self.generated_rooms+=1
                                 if self.current_boss_rooms==0:
                                     boss_chance=random.randint(1,5)
-                                if self.current_treasure_rooms<=1:
+                                if self.current_treasure_rooms<=2:
                                     treasure_chance=random.randint(0,4)
                                 if self.current_shop_rooms==0:
                                     shop_chance=random.randint(0,5)
@@ -735,15 +753,18 @@ class World():
                                 newroom=Room()
                                 self.rooms[newroom_coordinates]=newroom
                                 if boss_chance+current_room.coordinates[0]+current_room.coordinates[1]>=10 or (self.max_rooms-self.generated_rooms<=2 and self.current_boss_rooms==0):
+                                    print("boss at",newroom_coordinates)
                                     self.current_boss_rooms+=1
                                     newroom.type="boss"
 
                                     boss_chance=0
-                                elif treasure_chance+current_room.coordinates[0]+current_room.coordinates[1]>=8:
+                                elif treasure_chance==4:
+                                    print("treasure at",newroom_coordinates)
                                     self.current_treasure_rooms+=1
                                     newroom.type="treasure"
                                     treasure_chance=0
-                                elif shop_chance==4:
+                                elif shop_chance+current_room.coordinates[0]+current_room.coordinates[1]>=4:
+                                    print("shop at",newroom_coordinates)
                                     self.current_shop_rooms+=1
                                     newroom.type="shop"
                                     shop_chance=0
@@ -754,8 +775,9 @@ class World():
                             newroom.coordinates=newroom_coordinates
         self.currentroom.type="start"
         self.currentroom.generate(self)
+        print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
-        
+        print("from",self.currentroom.coordinates)
         while self.currentroom.enemies:
             self.currentroom.enemies[0].die()
         while self.currentroom.enemy_tears:
@@ -774,6 +796,8 @@ class World():
         direction=(direction+2)%4
         Giova.Door_Move(direction)
         self.currentroom.generate(self)
+        print("to",self.currentroom.coordinates)
+
 world=World()      
 Menuobj =Menu()
 
