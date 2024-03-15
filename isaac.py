@@ -46,7 +46,7 @@ powerup_positions=[[360,500],[960,500],[1560,500]]
 
 
 def kill_enemy(object):
-    if random.randint(5,10)==10:
+    if random.randint(10,10)==10:
         coin=Coin()
         coin.pos=object.pos
         world.currentroom.coins.append(coin)
@@ -428,8 +428,9 @@ class Coin():
             self.pos=[900,500]
             self.ybound=25
             self.xbound=25
-            self.coinimg= ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
+            self.coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((self.xbound,self.ybound)))
             self.geometry = tk.Canvas(window,bg="yellow",height=self.xbound,width=self.ybound)
+            self.geometry.create_image(self.xbound/2,self.ybound/2,image=self.coinimg)
     def update(self):
             world.currentroom.coins.append(self)
             self.geometry.place(x=self.pos[0],y=self.pos[1])
