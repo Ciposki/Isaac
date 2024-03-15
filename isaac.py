@@ -48,8 +48,7 @@ powerup_positions=[[360,500],[960,500],[1560,500]]
 def kill_enemy(object):
     if random.randint(10,10)==10:
         coin=Coin()
-        coin.pos=object.pos
-        world.currentroom.coins.append(coin)
+        coin.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
         coin.update()
     world.currentroom.enemies.remove(object)
     object.enemy_geometry.place_forget()
@@ -228,7 +227,7 @@ class player():
             if detect_collision(coin,self):
 
                 coin.die()
-                self.coins+=0.5
+                self.coins+=1
 
                 #print(self.coins)
                 return 3
