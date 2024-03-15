@@ -26,6 +26,8 @@ window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
 
 
+head_img=ImageTk.PhotoImage(Image.open("room0.png").resize((100,100)))
+hand_img=ImageTk.PhotoImage(Image.open("back.png").resize((100,100)))
 
 ismenu =True
 
@@ -413,15 +415,59 @@ class Random_Enemy():
             if enemy_collisions(self)==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.pos=oldpos
 
-
-class Boss():
+#This is horribly written
+class Boss_main():
     def __init__(self):
-        self.ybound=100
-        self.xbound=100
         self.hp=60
+        self.timer=200
+        self.timer_max=200
+        self.action=0
+        self.head=Boss_hand()
+        self.left_hand=Boss_hand()
+        self.right_hand=Boss_hand()
+        a=bg.create_image(700,500,image=head_img)
+    def update(self):
+        self.timer-=1
+        if self.timer==0:
+            #Stops the previous action
+            match self.action:
+                case 1: #tears
+                    ...
+                case 2: #hands
+                    ...
+                case 3: #laser
+                    ...
+            self.timer=self.timer_max
+            self.action=random.randint(1,3)
+            #Starts a new one
+            match self.action:
+                case 1: #tears
+                    ...
+                case 2: #hands
+                    ...
+                case 3: #laser
+                    ...
+    
+class Boss_head():
+    def __init__(self):
+       self.xbound=100
+       self.ybound=100 
+       self.pos=[500,500]
+       """self.head_img=ImageTk.PhotoImage(Image.open("room0.png").resize((self.xbound,self.ybound)))
+       self.head_id=bg.create_image(700,500,image=self.head_img)"""
+       print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+       head_id=bg.create_image(700,500,image=ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))))
 
+    def laser_attack(self):
+        ...
 
-
+class Boss_hand():
+    def __init__(self):
+        self.xbound=100
+        self.ybound=100
+        self.pos=[500,500]
+        self.img = ImageTk.PhotoImage(Image.open("Isaac.png").resize((self.xbound,self.ybound)))
+        self.hand_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.img,anchor='nw') 
 
 
 
@@ -676,7 +722,9 @@ class Room():
                         print("spawned")
                             
             case "boss":
-                ...
+                boss=Boss_main()
+                
+                
             case "treasure":
                 if not self.cleared:
                     powNum= random.randint(1,2)
@@ -773,7 +821,8 @@ class World():
                                 self.frontier.append(newroom_coordinates)
                             self.rooms[newroom_coordinates].doors[(door_direction+2)%4]=1
                             newroom.coordinates=newroom_coordinates
-        self.currentroom.type="start"
+        #self.currentroom.type="start"
+        self.currentroom.type="boss"
         self.currentroom.generate(self)
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
