@@ -896,7 +896,7 @@ class World():
                 for door_direction in range(4):
                     #creates doors in the current room
                     door_chance=random.randint(0,1)
-                    if current_room.doors[door_direction]==None:
+                    if not current_room.doors[door_direction]:
                         current_room.doors[door_direction]=door_chance
                         if door_chance==1:
                             
@@ -932,15 +932,21 @@ class World():
                                     shop_chance=0
                                 else:
                                     newroom.type="normal"
-                                self.frontier.append(newroom_coordinates)
+                                    self.frontier.append(newroom_coordinates)
                             self.rooms[newroom_coordinates].doors[(door_direction+2)%4]=1
                             newroom.coordinates=newroom_coordinates
+            else:
+                rooms=list(self.rooms.keys())
+                choice=random.choice(rooms)
+                if self.rooms[choice].type=="normal":
+                    self.frontier.append(choice)
         self.currentroom.type="start"
         #self.currentroom.type="boss"
         self.currentroom.generate(self)
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
         #this is to avoid crashes
+        print("direction",direction)
         newroom_index=(self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1])
         if newroom_index in self.rooms:
             print(self.rooms)
