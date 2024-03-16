@@ -96,6 +96,7 @@ def detect_collision(a,b):
     """
     IF A IS INSIDE B
     """ 
+    
     if ((b.pos[0]<=a.pos[0]<=b.pos[0]+b.xbound) or (b.pos[0]<=a.pos[0]+a.xbound<=b.pos[0]+b.xbound)) and ((b.pos[1]<=a.pos[1]<=b.pos[1]+b.ybound) or (b.pos[1]<=a.pos[1]+a.ybound<=b.pos[1]+b.ybound)):
         return True
     return False
@@ -544,8 +545,8 @@ class Boss_head():
        self.xbound=400
        self.ybound=400
        self.pos=[760,150]
-       self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
-       self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+       #self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+       #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
        self.head_id=bg.create_image(self.pos[0],self.pos[1],image=head_img,anchor='nw')
     
 
@@ -557,10 +558,11 @@ class Boss_hand():
         self.speed=20
     def spawn(self):
         self.hand_id=bg.create_image(self.pos[0],self.pos[1],image=hand_img,anchor='nw')
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
-        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+        #self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def update(self):
-        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+        bg.moveto(self.hand_id,self.pos[0],self.pos[1])
+        #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
 
 class Wall():
     def __init__(self):
@@ -703,7 +705,8 @@ class PowerUp():
                     Giova.damage+=random.randint(1,4)
                     print(f"Damage:{Giova.damage}")
                 case 1:
-                    Giova.hp += 2
+                    Giova.hp=Giova.max_hp
+                    Giova.max_hp+=2
                     print(f"HP:{Giova.hp}")
                 case 2:
                     Giova.speed+=random.randint(1,3)
@@ -756,13 +759,14 @@ class Room():
         objectt=0
         
         for objectt in (self.environment):
-            if detect_collision(enemy,objectt):
+            if (enemy==Follow_Enemy and detect_collision(enemy,objectt)) or detect_collision(enemy,objectt):
                 self.generate_position(enemy)
                 return      
         for objectt in self.enemies:
-            if detect_collision(enemy,objectt):
+            if (enemy==Follow_Enemy and detect_collision(objectt,enemy)) or detect_collision(enemy,objectt):
                 self.generate_position(enemy)
                 return 
+            
 
     def generate(self,world):
         global sfondo
@@ -939,6 +943,7 @@ class World():
         #this is to avoid crashes
         newroom_index=(self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1])
         if newroom_index in self.rooms:
+            print(self.rooms)
             print("from",self.currentroom.coordinates)
             while self.currentroom.enemies:
                 self.currentroom.enemies[0].die()
