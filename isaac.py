@@ -20,14 +20,39 @@ window.title("The Binding of Giovanni")
 width=1920
 height=1080
 bg = tk.Canvas(window,width=1920,height=1080,background="black")
-roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), ImageTk.PhotoImage(Image.open("room1.png").resize((width,height)))]
+
+"""
+IMAGES
+"""
+roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), 
+           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080)))]
+
+special_roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))),  #shop
+           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))), #boss
+           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))), #treasure
+           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))) #start
+           ]
+
+
+powerupimgs=[
+    ImageTk.PhotoImage(Image.open("front.png").resize((100,100))), #Damage
+    ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))), #Hp
+    ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))) #Speed
+]
+coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((25,25)))
+heartimg=ImageTk.PhotoImage(Image.open("sinistra.png").resize((25,25)))
+
+
+head_img=ImageTk.PhotoImage(Image.open("coin.png").resize((400,400)))
+hand_img=ImageTk.PhotoImage(Image.open("coin.png").resize((250,250)))
+
+
+
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
 
 
-head_img=ImageTk.PhotoImage(Image.open("room0.png").resize((100,100)))
-hand_img=ImageTk.PhotoImage(Image.open("back.png").resize((100,100)))
 
 ismenu =True
 
@@ -48,10 +73,16 @@ powerup_positions=[[360,500],[960,500],[1560,500]]
 
 
 def kill_enemy(object):
-    if random.randint(10,10)==10:
+    chance=random.randint(0,10)
+    if chance<=5:
         coin=Coin()
         coin.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
         coin.update()
+    elif chance==10:
+        print("sium")
+        heart=Heart()
+        heart.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
+        heart.update()
     world.currentroom.enemies.remove(object)
     object.enemy_geometry.place_forget()
     object.enemy_geometry.delete()
@@ -165,6 +196,7 @@ class player():
         self.speed = 5
         self.tears=[]
         self.hp=60
+        self.max_hp=6
         self.maxteartimer=10
         self.teartimer=0
         self.ybound=100
@@ -233,6 +265,17 @@ class player():
 
                 #print(self.coins)
                 return 3
+        for heart in world.currentroom.hearts:
+            if detect_collision(heart,self):
+                
+                if self.hp<self.max_hp:
+                    heart.die()
+                    self.hp+=1
+                return 3
+        if world.currentroom.type=="boss":
+            boss=world.currentroom.boss
+            if detect_collision(self,boss.left_hand) or detect_collision(self,boss.right_hand):
+                return 2
         return 0
     def take_damage(self,damage):
         if self.invincibility_timer==0:
@@ -416,62 +459,108 @@ class Random_Enemy():
 
 #This is horribly written
 class Boss_main():
+    
     def __init__(self):
+        print("spawning boss")
         self.hp=60
         self.timer=200
-        self.timer_max=200
+        self.timer_max=200 #the normal val is 200
         self.action=0
-        self.head=Boss_hand()
+        
+    def spawn(self):
+        self.head=Boss_head()
         self.left_hand=Boss_hand()
         self.right_hand=Boss_hand()
-        a=bg.create_image(700,500,image=head_img)
-    def update(self):
+        self.right_hand.pos=[1260,150]
+        self.right_hand.speed=20
+        self.left_hand.spawn()
+        self.right_hand.spawn()
+    def update_state(self):
         self.timer-=1
         if self.timer==0:
-            #Stops the previous action
-            match self.action:
-                case 1: #tears
-                    ...
-                case 2: #hands
-                    ...
-                case 3: #laser
-                    ...
             self.timer=self.timer_max
-            self.action=random.randint(1,3)
-            #Starts a new one
-            match self.action:
-                case 1: #tears
-                    ...
-                case 2: #hands
-                    ...
-                case 3: #laser
-                    ...
-    
+            self.action=random.randint(1,5)
+        match self.action:
+            case 1:
+                if self.timer %50==0:
+                    tear_number=random.randint(8,14)
+                    for i in range(tear_number):
+                        enemy_tear=Enemy_Tear()
+                        enemy_tear.pos=[width/tear_number*i,500]
+                        enemy_tear.direction=[0,1]
+                        world.currentroom.enemy_tears.append(enemy_tear)
+            case 2: #left hand
+                print("left hand")
+                if self.timer>=80 and self.left_hand.pos[1]<580:
+                    self.left_hand.pos[1]+=self.left_hand.speed
+                elif self.timer>=80 and self.left_hand.pos[0]<1500:
+                    self.left_hand.pos[0]+=self.left_hand.speed
+                elif self.timer<=80 and self.left_hand.pos[0]>385:
+                    self.left_hand.pos[0]-=self.left_hand.speed
+                elif self.timer<=80 and self.left_hand.pos[1]>150:
+                    self.left_hand.pos[1]-=self.left_hand.speed
+                self.left_hand.update()
+                
+            case 3: #right hand
+                print("right hand")
+                if self.timer>=80 and self.right_hand.pos[1]<580:
+                    self.right_hand.pos[1]+=self.right_hand.speed
+                elif self.timer>=80 and self.right_hand.pos[0]>150:
+                    self.right_hand.pos[0]-=self.right_hand.speed
+                elif self.timer<=80 and self.right_hand.pos[0]<1260:
+                    self.right_hand.pos[0]+=self.right_hand.speed
+                elif self.timer<=80 and self.right_hand.pos[1]>150:
+                    self.right_hand.pos[1]-=self.right_hand.speed
+                self.right_hand.update()
+            case 4: #front
+                if self.timer %50==0:
+                    for i in range(7):
+                        enemy_tear=Enemy_Tear()
+                        enemy_tear.speed*=2
+                        enemy_tear.pos=[760+66*i,500]
+                        enemy_tear.direction=[0,1]
+                        world.currentroom.enemy_tears.append(enemy_tear)
+            case 5:
+                if self.timer%50==0 or self.timer==0:
+                    enemy_tear=Enemy_Tear()
+                    enemy_tear.timer=500
+                    enemy_tear.speed*=2
+                    enemy_tear.pos=[100,900]
+                    enemy_tear.direction=[1,0]
+                    world.currentroom.enemy_tears.append(enemy_tear)
+        #checks collisions
+        for tear in Giova.tears:
+            if detect_collision(tear,self.head) or detect_collision(tear,self.right_hand) or detect_collision(tear,self.left_hand):
+                print("head",tear.pos,self.head.pos)
+                self.hp-=Giova.damage
+                print(self.hp)
+                tear.die()
+        if self.hp<=0:
+            self.die()
+    def die(self):
+        sys.exit()
 class Boss_head():
     def __init__(self):
-       self.xbound=100
-       self.ybound=100 
-       self.pos=[500,500]
-       """self.head_img=ImageTk.PhotoImage(Image.open("room0.png").resize((self.xbound,self.ybound)))
-       self.head_id=bg.create_image(700,500,image=self.head_img)"""
-       print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-       head_id=bg.create_image(700,500,image=ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))))
-
-    def laser_attack(self):
-        ...
+       self.xbound=400
+       self.ybound=400
+       self.pos=[760,150]
+       self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+       self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+       self.head_id=bg.create_image(self.pos[0],self.pos[1],image=head_img,anchor='nw')
+    
 
 class Boss_hand():
     def __init__(self):
-        self.xbound=100
-        self.ybound=100
-        self.pos=[500,500]
-        self.img = ImageTk.PhotoImage(Image.open("Isaac.png").resize((self.xbound,self.ybound)))
-        self.hand_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.img,anchor='nw') 
-
-
-
-
-
+        self.xbound=250
+        self.ybound=250
+        self.pos=[385,150]
+        self.speed=20
+    def spawn(self):
+        self.hand_id=bg.create_image(self.pos[0],self.pos[1],image=hand_img,anchor='nw')
+        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+    def update(self):
+        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
 
 class Wall():
     def __init__(self):
@@ -490,22 +579,28 @@ class Wall():
 
 class Coin():
     def __init__(self):
-            
             self.pos=[900,500]
             self.ybound=25
             self.xbound=25
-            self.coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((self.xbound,self.ybound)))
-            self.geometry = tk.Canvas(window,bg="yellow",height=self.xbound,width=self.ybound)
-            self.geometry.create_image(self.xbound/2,self.ybound/2,image=self.coinimg)
     def update(self):
             world.currentroom.coins.append(self)
-            self.geometry.place(x=self.pos[0],y=self.pos[1])
+            self.geometry = bg.create_image(self.pos[0],self.pos[1],image=coinimg,anchor='nw') 
     def die(self):
-        self.geometry.place_forget()
-        self.geometry.delete()
+        bg.delete(self.geometry)
         world.currentroom.coins.remove(self)
             
-
+class Heart():
+    def __init__(self):
+            self.pos=[900,500]
+            self.ybound=25
+            self.xbound=25
+    def update(self):
+            world.currentroom.hearts.append(self)
+            self.geometry = bg.create_image(self.pos[0],self.pos[1],image=heartimg,anchor='nw') 
+    def die(self):
+        bg.delete(self.geometry)
+        world.currentroom.hearts.remove(self)
+            
 
 
 def input(event):
@@ -560,12 +655,15 @@ def update():
             single_tear.update_state()
         for enemy in world.currentroom.enemies:
             enemy.update_state()
-        if not world.currentroom.enemies:
-            world.currentroom.cleared=True
+        
         for enemy_tear in world.currentroom.enemy_tears:
             enemy_tear.update_state()
         for door in world.currentroom.door_objects:
             door.detect_collision()
+        if world.currentroom.boss:
+            world.currentroom.boss.update_state()
+        elif not world.currentroom.enemies:
+            world.currentroom.cleared=True
     window.after(20,update)
 
 
@@ -586,8 +684,9 @@ class PowerUp():
         self.price=0
         
     def draw(self):
-        self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
-        self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
+        self.geometry = bg.create_image(self.pos[0],self.pos[1],image=powerupimgs[self.index],anchor='nw') 
+        #self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
+        #self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.price>0:
             self.text=tk.Label(window, text =self.price)
             self.text.config(font =("Courier", 14))
@@ -612,12 +711,13 @@ class PowerUp():
             self.die()
 
     def die(self):
+        bg.delete(self.geometry)
         world.currentroom.power_up.remove(self)
         if self.price>0:
             self.text.destroy()
-        self.powerup_geometry.place_forget()
+        """self.powerup_geometry.place_forget()
         self.powerup_geometry.delete()
-        self.powerup_geometry.destroy()
+        self.powerup_geometry.destroy()"""
         
 
     
@@ -639,11 +739,13 @@ class Room():
         self.environment=[]
         self.enemy_tears=[]
         self.coins=[]
+        self.hearts=[]
         self.cleared=False
-        self.coordinates=[0,0]
+        self.coordinates=(0,0)
         self.type="normal"
         self.env_type=random.choice(environment_options)
         self.roomimg = roomsimgs[random.randint(0,1)]
+        self.boss=None
         bg.place(y=0,x=0)
     def generate_position(self, enemy):
         """
@@ -665,14 +767,10 @@ class Room():
     def generate(self,world):
         global sfondo
         bg.delete(sfondo)
-        sfondo = bg.create_image(width/2,height/2,image=self.roomimg)
-        #Spawning doors
-        Giova.init_draw()
-        self.environment=self.env_type.copy()
         
-        #print(self.environment,self.env_type)
-        for obj in self.environment:
-            obj.update()
+        #Spawning doors
+        
+        
         for i in range(4):
             if self.doors[i]==1:
                 door=Door()
@@ -693,6 +791,11 @@ class Room():
             
         match self.type:
             case "normal":
+                sfondo = bg.create_image(width/2,height/2,image=self.roomimg)
+                self.environment=self.env_type.copy()
+        
+                for obj in self.environment:
+                    obj.update()
                 #Might be added to other type of room
                 if not self.cleared:
                     enemy_number=random.randint(2,5)
@@ -710,6 +813,8 @@ class Room():
 
                     
             case "shop":
+                
+                sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[0])
                 if not self.cleared:
                     for i in range(3):
                         price=random.randint(3,7)
@@ -721,10 +826,15 @@ class Room():
                         print("spawned")
                             
             case "boss":
-                boss=Boss_main()
+                sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[1])
+                self.cleared=False
+                self.boss=Boss_main()
+                self.boss.spawn()
+                Giova.Door_Move(2)
                 
                 
             case "treasure":
+                sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[2])
                 if not self.cleared:
                     powNum= random.randint(1,2)
                     for i in range(powNum):
@@ -733,8 +843,9 @@ class Room():
                         powerup.draw()
                         self.power_up.append(powerup)
                         print("spawned")
-            
-    
+            case "start":
+                sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[3])
+        Giova.init_draw()
 
 class Door():
     def __init__(self) -> None:
@@ -820,31 +931,36 @@ class World():
                                 self.frontier.append(newroom_coordinates)
                             self.rooms[newroom_coordinates].doors[(door_direction+2)%4]=1
                             newroom.coordinates=newroom_coordinates
-        #self.currentroom.type="start"
-        self.currentroom.type="boss"
+        self.currentroom.type="start"
+        #self.currentroom.type="boss"
         self.currentroom.generate(self)
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
-        print("from",self.currentroom.coordinates)
-        while self.currentroom.enemies:
-            self.currentroom.enemies[0].die()
-        while self.currentroom.enemy_tears:
-            self.currentroom.enemy_tears[0].die()
-        while self.currentroom.environment:
-            self.currentroom.environment[0].die()
-        while self.currentroom.door_objects:
-            self.currentroom.door_objects[0].die()
-        while self.currentroom.coins:
-            self.currentroom.coins[0].die()
-        while Giova.tears:
-            Giova.tears[0].die()
-        while self.currentroom.power_up:
-            self.currentroom.power_up[0].die()
-        self.currentroom=self.rooms[self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1]]
-        direction=(direction+2)%4
-        Giova.Door_Move(direction)
-        self.currentroom.generate(self)
-        print("to",self.currentroom.coordinates)
+        #this is to avoid crashes
+        newroom_index=(self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1])
+        if newroom_index in self.rooms:
+            print("from",self.currentroom.coordinates)
+            while self.currentroom.enemies:
+                self.currentroom.enemies[0].die()
+            while self.currentroom.enemy_tears:
+                self.currentroom.enemy_tears[0].die()
+            while self.currentroom.environment:
+                self.currentroom.environment[0].die()
+            while self.currentroom.door_objects:
+                self.currentroom.door_objects[0].die()
+            while self.currentroom.coins:
+                self.currentroom.coins[0].die()
+            while Giova.tears:
+                Giova.tears[0].die()
+            while self.currentroom.power_up:
+                self.currentroom.power_up[0].die()
+            while self.currentroom.hearts:
+                self.currentroom.hearts[0].die()
+            self.currentroom=self.rooms[newroom_index]
+            direction=(direction+2)%4
+            Giova.Door_Move(direction)
+            self.currentroom.generate(self)
+            print("to",self.currentroom.coordinates)
 
 world=World()      
 Menuobj =Menu()
