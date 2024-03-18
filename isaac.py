@@ -8,6 +8,7 @@ import math
 import random
 import sys
 from PIL import ImageTk, Image
+from tkinter import messagebox
 
 room_xbound=130
 room_ybound=140
@@ -196,7 +197,7 @@ class player():
         self.pos = [width/2,height/2]
         self.speed = 5
         self.tears=[]
-        self.hp=60
+        self.hp=1
         self.max_hp=6
         self.maxteartimer=10
         self.teartimer=0
@@ -281,6 +282,7 @@ class player():
     def take_damage(self,damage):
         if self.invincibility_timer==0:
             if self.hp==0:
+                messagebox.showinfo("Sei morto Gay","Sei Morto Gay")
                 sys.exit()
             else:
                 self.hp-=damage
@@ -539,6 +541,7 @@ class Boss_main():
         if self.hp<=0:
             self.die()
     def die(self):
+        messagebox.showinfo("Hai vinto Gay","Hai Vinto Gay")
         sys.exit()
 class Boss_head():
     def __init__(self):
