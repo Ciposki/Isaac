@@ -723,10 +723,7 @@ class PowerUp():
         #self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
         #self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.price>0:
-            self.text=tk.Label(window, text =self.price)
-            self.text.config(font =("Courier", 14))
-            #self.text.lower()
-            self.text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
+            self.text=bg.create_text(self.pos[0]+self.xbound/2,self.pos[1]-30,text=self.price,font=smallfont,fill="#FEFAE0")
             
 
     def generate_powerup(self):
@@ -752,7 +749,7 @@ class PowerUp():
         bg.delete(self.geometry)
         world.currentroom.power_up.remove(self)
         if self.price>0:
-            self.text.destroy()
+            bg.delete(self.text)
         """self.powerup_geometry.place_forget()
         self.powerup_geometry.delete()
         self.powerup_geometry.destroy()"""
