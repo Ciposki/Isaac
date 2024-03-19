@@ -41,12 +41,11 @@ powerupimgs=[
     ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))) #Speed
 ]
 coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((25,25)))
-heartimg=ImageTk.PhotoImage(Image.open("sinistra.png").resize((25,25)))
+heartimg=ImageTk.PhotoImage(Image.open("heart.png").resize((50,50)))
 
 
 head_img=ImageTk.PhotoImage(Image.open("coin.png").resize((400,400)))
 hand_img=ImageTk.PhotoImage(Image.open("coin.png").resize((250,250)))
-
 
 
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
@@ -73,8 +72,9 @@ door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
 
+
 def kill_enemy(object):
-    chance=random.randint(0,10)
+    chance=random.randint(1,1)
     if chance<=5:
         coin=Coin()
         coin.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
@@ -197,23 +197,28 @@ class player():
         self.pos = [width/2,height/2]
         self.speed = 5
         self.tears=[]
-        self.hp=1
+        self.hp=3
+        self.hearts=[]
         self.max_hp=6
         self.maxteartimer=10
         self.teartimer=0
         self.ybound=100
         self.xbound=100
         self.invincibility_timer=0
-        self.maxinvincibility_timer=21
+        self.maxinvincibility_timer=10
         self.damage = 100
         self.coins=0
+        self.coinslabel  = tk.Label(text=f"x{self.coins}",background="#9c6644")
+        self.coinslabel.place(x=1800,y=50)
+        self.coinicon=bg.create_image(1750,50,image=coinimg,anchor='nw')
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
-
+        self.draw_hearts()
         self.init_draw()
+        
     def init_draw(self):
         bg.delete(self.player_geometry)
-        self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
+        self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw')
     def update_state(self):
         
         #If going diagonally
@@ -236,7 +241,7 @@ class player():
         """
         THIS COULD PROBABLY BE DONE IN A CLEANER WAY
         """
-        if self.invincibility_timer==20:
+        if self.invincibility_timer==self.maxinvincibility_timer-1:
             self.invincibility_timer=0
         if self.invincibility_timer>0:
             self.invincibility_timer+=1
@@ -264,7 +269,7 @@ class player():
 
                 coin.die()
                 self.coins+=1
-
+                self.coinslabel.config(text=f"x{self.coins}")
                 #print(self.coins)
                 return 3
         for heart in world.currentroom.hearts:
@@ -273,6 +278,7 @@ class player():
                 if self.hp<self.max_hp:
                     heart.die()
                     self.hp+=1
+                    self.draw_hearts()
                 return 3
         if world.currentroom.type=="boss":
             boss=world.currentroom.boss
@@ -282,11 +288,14 @@ class player():
     def take_damage(self,damage):
         if self.invincibility_timer==0:
             if self.hp==0:
-                messagebox.showinfo("Sei morto Gay","Sei Morto Gay")
+                messagebox.showinfo("The Binding of Giova","Sei Morto")
                 sys.exit()
             else:
                 self.hp-=damage
                 self.invincibility_timer=1
+                bg.delete(self.hearts[-1])
+                self.hearts.pop()
+                print(self.hearts)
     def Door_Move(self,direction):
         margin=50
         doorxbound=100
@@ -304,6 +313,24 @@ class player():
             case 3:
                 self.pos[0]=width-self.xbound-margin-room_xbound
                 self.pos[1]=(height-self.ybound)/2
+    
+    def draw_hearts(self):
+        self.posx=50
+        for i in self.hearts:
+            bg.delete(i)
+        self.hearts=[]
+        for i in range(self.hp):
+            heart = bg.create_image(self.posx,50,image=heartimg,anchor='nw')
+            self.hearts.append(heart)
+            self.posx+=50
+        
+
+            
+
+
+        
+    
+
 class Tear():
     def __init__(self):
         self.direction=[0,0]
@@ -541,7 +568,7 @@ class Boss_main():
         if self.hp<=0:
             self.die()
     def die(self):
-        messagebox.showinfo("Hai vinto Gay","Hai Vinto Gay")
+        messagebox.showinfo("The Binding of  Giova","Hai Vinto")
         sys.exit()
 class Boss_head():
     def __init__(self):
@@ -703,13 +730,15 @@ class PowerUp():
         world.currentroom.cleared=True
         if Giova.coins>=self.price:
             Giova.coins-=self.price
+            Giova.coinslabel.config(text=f"x{Giova.coins}")
             match self.index:
                 case 0:
                     Giova.damage+=random.randint(1,4)
                     print(f"Damage:{Giova.damage}")
                 case 1:
                     Giova.hp=Giova.max_hp
-                    Giova.max_hp+=2
+                    Giova.max_hp+=1
+                    Giova.draw_hearts()
                     print(f"HP:{Giova.hp}")
                 case 2:
                     Giova.speed+=random.randint(1,3)
@@ -774,7 +803,6 @@ class Room():
     def generate(self,world):
         global sfondo
         bg.delete(sfondo)
-        
         #Spawning doors
         
         
@@ -853,7 +881,10 @@ class Room():
             case "start":
                 sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[3])
         Giova.init_draw()
-
+        for i in Giova.hearts:
+            print("raised")
+            bg.tag_raise(i)
+        bg.tag_raise(Giova.coinicon)
 class Door():
     def __init__(self) -> None:
         self.xbound=100
