@@ -1,7 +1,4 @@
-#TODO Fix Input(you cant move and shoot at the same time)
-# Random enemy collisions are broken
-#Fix coin pickups being doubled
-#Gli sfondi non sono allineati
+
 import tkinter as tk
 import tkinter.font as font
 import math
@@ -11,16 +8,22 @@ from PIL import ImageTk, Image
 from tkinter import messagebox
 import copy
 sys.setrecursionlimit(9999)
+#dimensions to not make the player walk on walls
 room_xbound=130
 room_ybound=140
 
+#multipliers for the random enemy's direction
 random_dir=[-1,-0.5,0,1,0.5]
+#Opens a tkinter window
 window = tk.Tk()
 window.attributes("-fullscreen",False)
+#Adds an icon and a title
 window.iconphoto(True,ImageTk.PhotoImage(Image.open("Isaac.png")))
 window.title("The Binding of Giovanni")
+#window dimensions
 width=1920
 height=1080
+#creates a canvas.
 bg = tk.Canvas(window,width=1920,height=1080,background="black")
 
 """
@@ -74,10 +77,12 @@ window.geometry("1920x1080")
 
 ismenu =True
 
+#Matches key presses with directions
 orientations={87:(1,-1),#W
               65:(0,-1),#A
               83:(1,1),#S
               68:(0,1)}#D
+#Matches arrow presses with directions
 arrows={
     37:(0,-1),#←
     38:(1,-1),#↑
@@ -86,16 +91,25 @@ arrows={
 }
 shooting = False
 #directions=[(0,1),(1,0),(0,-1),(-1,0)]
+
+#Directions to add or remove to rooms in order to move
 directions=[(0,-1),(-1,0),(0,1),(1,0)]
 
+#Fixed door positions
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
+#Fixed powerup positions
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
+#Fonts
 fonT = font.Font(size=50,family="hooge 05_55")
 titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
 smallfont = font.Font(size=35,family="hooge 05_55")
 
+
 def kill_enemy(object):
+    """
+    When killing an enemy removes it and rolls to generate nothing, a coin or an heart
+    """
     chance=random.randint(1,10)
     if chance<=5:
         coin=Coin()
@@ -115,7 +129,7 @@ def normalize_vector(vector):
 
 def detect_collision(a,b):
     """
-    IF A IS INSIDE B
+    CHECKS IF A IS INSIDE B
     """ 
     
     if ((b.pos[0]<=a.pos[0]<=b.pos[0]+b.xbound) or (b.pos[0]<=a.pos[0]+a.xbound<=b.pos[0]+b.xbound)) and ((b.pos[1]<=a.pos[1]<=b.pos[1]+b.ybound) or (b.pos[1]<=a.pos[1]+a.ybound<=b.pos[1]+b.ybound)):
@@ -139,70 +153,94 @@ def spawn_tear(direction,tear,entity):
             tear.pos[1]+=(entity.ybound)
 
 def enemy_collisions(self):
+    """
+    Given an enemy checks all of the possible collisions.
+    0 is no collision
+    1 is collision with a non solid object
+    2 is collision with a solid object
+    """
+    #if theres a collision with one of the players tears
     for tear in Giova.tears:
             if detect_collision(tear,self):
+                #takes damage
                 self.hp-=Giova.damage
                 tear.die()
                 return 1
+    #if theres a collision with another enemys tear
     for tear in world.currentroom.enemy_tears:
         if detect_collision(tear,self):
             tear.die()
             return 1
+    #if theres a collision with the player
     if detect_collision(Giova,self):
         return 2
-    
-
+    #if theres a collision with an object
     for object in world.currentroom.environment:
         if detect_collision(object,self):
             return 2
     for enemy in world.currentroom.enemies:
+        #if the enemy is different from the one we are checking for and theres a collision with another enemy
         if enemy!=self and detect_collision(enemy,self):
             return 2
+    return 0
         
 def rotate(self,deg):
-        match deg:
-            case 0:
-                self.pos[0]-=self.xbound/2
-            case 1:
-                self.xbound,self.ybound=self.ybound,self.xbound
-                self.pos[1]-=self.ybound/2
-            case 2:
-                self.pos[1]-=self.ybound
-                self.pos[0]-=self.xbound/2
-            case 3:
-                self.xbound,self.ybound=self.ybound,self.xbound
-                self.pos[0]-=self.xbound
-                self.pos[1]-=self.ybound/2
+    """
+    Rotates the doors based on their directions
+    """
+    match deg:
+        case 0:
+            self.pos[0]-=self.xbound/2
+        case 1:
+            self.xbound,self.ybound=self.ybound,self.xbound
+            self.pos[1]-=self.ybound/2
+        case 2:
+            self.pos[1]-=self.ybound
+            self.pos[0]-=self.xbound/2
+        case 3:
+            self.xbound,self.ybound=self.ybound,self.xbound
+            self.pos[0]-=self.xbound
+            self.pos[1]-=self.ybound/2
 class Menu():
     def __init__(self) -> None:
-        self.font = font.Font(size=50,family="hooge 05_55")
-        self.titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
-        self.menubg=tk.Canvas(width=width,height=height,bg="Black")
-        self.sfondo = self.menubg.create_image(width/2,height/2,image=roomsimgs[0])
-        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=titleFont,fill="#FEFAE0")
+        # Initializes fonts for menu text and title
+        self.font = font.Font(size=50, family="hooge 05_55")
+        self.titleFont = font.Font(size=100, weight="bold", family="hooge 05_55")
+        # Creates a canvas for the menu background
+        self.menubg = tk.Canvas(width=width, height=height, bg="Black")
+        # Places the background image in the center of the canvas
+        self.sfondo = self.menubg.create_image(width/2, height/2, image=roomsimgs[0])
+        # Displays the game title at the top of the menu
+        self.title = self.menubg.create_text(width/2, 300, text="The Binding Of Giova", font=titleFont, fill="#FEFAE0")
         
-        
-        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
-        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
-        self.xbound =800
-        self.ybound=100
+        # Creates the "Start" button
+        self.playbtn = tk.Button(window, text="Start", command=self.play, relief="ridge", width=50, height=2, font=fonT, bg="#386641", activebackground="#6a994e", fg="#FEFAE0")
+        # Creates the "Quit" button
+        self.quitbtn = tk.Button(window, text="Quit", command=sys.exit, relief="ridge", font=fonT, bg="#386641", activebackground="#6a994e", fg="#FEFAE0")
+        # Dimensions for the buttons
+        self.xbound = 800
+        self.ybound = 100
+        # Places the buttons and background on the window
         self.place()
         
     def place(self):
-        self.menubg.place(x=0, y= 0)
-        self.playbtn.place(x=width/2-self.xbound/2,y=500,width=self.xbound,height=self.ybound)
-        self.quitbtn.place(x=width/2-self.xbound/2,y=650,width=self.xbound,height=self.ybound)
-        
-        
+        """Positions the menu background and buttons on the screen"""
+        self.menubg.place(x=0, y=0)
+        self.playbtn.place(x=width/2-self.xbound/2, y=500, width=self.xbound, height=self.ybound)
+        self.quitbtn.place(x=width/2-self.xbound/2, y=650, width=self.xbound, height=self.ybound)
     
     def play(self):
+        """When start is clicked"""
+        #sets menu to false
         global ismenu
         ismenu = False
         
+        # Destroy the menu components
         self.die()
         pass
     
     def die(self):
+        # Destroys the menu canvas and buttons
         self.menubg.destroy()
         self.playbtn.destroy()
         self.quitbtn.destroy()
@@ -212,61 +250,91 @@ class Menu():
         
 class player():
     def __init__(self):
+        #current direction
         self.direction = [0,0]
+        #previous direction
         self.lastdir= [0,0]
+        #current position
         self.pos = [width/2,height/2]
+        #speed
         self.speed = 5 
+        #holds active tear objects
         self.tears=[]
+        #current hp
         self.hp=3
+        #holds active heart images
         self.hearts=[]
+        #max hp
         self.max_hp=6
+        #timer to not spam tears
         self.maxteartimer=10
         self.teartimer=0
+        #player dimensions
         self.ybound=100
         self.xbound=100
+        #invincibility timer
         self.invincibility_timer=0
         self.maxinvincibility_timer=10
+        #damage dealt
         self.damage = 1
+        #coins held
         self.coins=0
+        #creates text and an icon for coins
         self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
         self.coinicon=bg.create_image(1730,50,image=coinimg,anchor='nw')
+        #initializes a sprite
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
+        #places the sprite based on the position
         self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
+        #creates hearts
         self.draw_hearts()
         self.init_draw()
         
     def init_draw(self):
+        """
+        Draws a new frame for the player and deletes the previous one
+        """
         bg.delete(self.player_geometry)
         self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw')
     def update_state(self):
         
-        #If going diagonally
+        #gets the previous position and the previous direction
         oldpos=self.pos.copy()
         self.lastdir=self.direction.copy()
+        #If going diagonally uses pythagoras's theorem
         if self.direction[0]&self.direction[1]:
             self.pos = [self.pos[0]+self.direction[0]*self.speed*math.sqrt(2)/2,self.pos[1]+self.direction[1]*self.speed*math.sqrt(2)/2]
+        #otherwise moves normally
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
-        #self.player_geometry.place(x=self.pos[0],y=self.pos[1])
+        #gets the change in position
         delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+        #if theres a change updates the players sprite
         if delta[0]!=0 or delta[1]!=0:
-            #bg.move(self.player_geometry,delta[0],delta[1])
             bg.moveto(self.player_geometry,self.pos[0],self.pos[1])
+        #if you cant shoot tears updates the timer
         if self.teartimer<self.maxteartimer:
             self.teartimer+=1
+        #if theres a collision with something or youre out of bounds sets the position to the previous one
         if self.detect_collisions()==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
             self.pos=oldpos
 
-        """
-        THIS COULD PROBABLY BE DONE IN A CLEANER WAY
-        """
+        print(self.invincibility_timer)
+        #if the invincibility timer gets to the max value sets it to zero
         if self.invincibility_timer==self.maxinvincibility_timer-1:
             self.invincibility_timer=0
+        #otherwise if its more then zero updates the timer
         if self.invincibility_timer>0:
+
             self.invincibility_timer+=1
     def detect_collisions(self):
         
-        
+        """
+        Detects collisions with enemies,objects,enemy tears,powerups,coins,hearts
+        0 is no collsion
+        1 is with a non solid object
+        2 is with a solid object
+        """
         for enemy in world.currentroom.enemies:
             if detect_collision(self,enemy):
                 self.take_damage(1)
@@ -282,43 +350,57 @@ class player():
         for powerup in world.currentroom.power_up:
             if detect_collision(powerup,self):
                 powerup.generate_powerup()
-                return 3
+                return 1
         for coin in world.currentroom.coins:
             if detect_collision(coin,self):
-
+                
                 coin.die()
                 self.coins+=1
+                #updates the coin counter
                 self.updateCoins()
-                #print(self.coins)
-                return 3
+                return 1
         for heart in world.currentroom.hearts:
             if detect_collision(heart,self):
-                
+                #if the players hp is lower than the maximum allowed 
                 if self.hp<self.max_hp:
                     heart.die()
                     self.hp+=1
+                    #updates the hearts on screen
                     self.draw_hearts()
-                return 3
+                return 1
+        #if theres a boss checks collision with it
         if world.currentroom.type=="boss":
             boss=world.currentroom.boss
             if detect_collision(self,boss.left_hand) or detect_collision(self,boss.right_hand) or detect_collision(self,boss.head):
                 self.take_damage(1)
 
                 return 2
+        #otherwise returns zero
         return 0
     def take_damage(self,damage):
+        #if the invincibility timer is zero, the player can take damage
         if self.invincibility_timer==0:
+            #if out of hp close the game and show a game over message
             if self.hp==0:
                 messagebox.showinfo("The Binding of Giova","Sei Morto")
                 sys.exit()
             else:
+                #otherwise lowers the players hp
                 self.hp-=damage
+                #sets the invincibility timer to 1 so it can tick up to the max value
                 self.invincibility_timer=1
+                #deleates the last heart
                 bg.delete(self.hearts[-1])
+                #removes it from the heart images
                 self.hearts.pop()
-                print(self.hearts)
+
     def Door_Move(self,direction):
+        """
+        Moves the player in the next room based on the position of the door he entered through.
+        """
+        #margin so the player doesnt collide with the door again
         margin=50
+        #door dimensions
         doorxbound=100
         doorybound=20
         match direction:
@@ -336,20 +418,31 @@ class player():
                 self.pos[1]=(height-self.ybound)/2
     
     def draw_hearts(self):
-        self.posx=50
+        """
+        Draws heart icons on the screen
+        """
+        # Starting x position for drawing hearts
+        self.posx = 50  
+        # Clears existing heart icons before redrawing
         for i in self.hearts:
             bg.delete(i)
-        self.hearts=[]
+        # Resets the list of heart icons
+        self.hearts = []  
+        # For each point of health, draw a heart icon and add it to the list
         for i in range(self.hp):
-            heart = bg.create_image(self.posx,50,image=heartimg,anchor='nw')
+            heart = bg.create_image(self.posx, 50, image=heartimg, anchor='nw')
             self.hearts.append(heart)
-            self.posx+=50
+            # Moves the position for the next heart icon
+            self.posx += 50  
+
     def updateCoins(self):
-        bg.delete(self.coinslabel)
-        self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
-
-            
-
+        """
+        Updates the coin count display on the screen. It deletes the old display and creates a new one with the updated coin count
+        """
+        # Deletes the old coin count text
+        bg.delete(self.coinslabel)  
+        # Creates new text with the updated coin count
+        self.coinslabel = bg.create_text(1800, 60, text=f"x{self.coins}", font=smallfont, fill="#FEFAE0")
 
         
     
@@ -359,36 +452,49 @@ class Tear():
         self.direction=[0,0]
         self.pos=Giova.pos.copy()
         self.speed=10
+        #this timer makes it so the tears dont go on forever
         self.timer=100
         self.xbound=10
         self.ybound=10
+        #the tear inherits some of the players momentum
         self.momentum=[Giova.direction[0]*1.5,Giova.direction[1]*1.5]
         self.init_draw()
 
     def init_draw(self):
+        #draws the tears
         self.tear_geometry = tk.Canvas(window,bg="cyan",height=self.ybound,width=self.xbound)
     def update_state(self):
+        #decreases the timer
         self.timer-=1
+        #if its zero deletes the tears
         if self.timer<=0:
             self.die()
+        #otherwise updates their position
         else:
             self.pos = [self.pos[0]+self.direction[0]*self.speed+self.momentum[0],self.pos[1]+self.direction[1]*self.speed+self.momentum[1]]
             self.tear_geometry.place(x=self.pos[0],y=self.pos[1])
+            #if the tears go out of bounds
             if (self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.die()
+            #for each obstacle checks the collision
             for obj in world.currentroom.environment:
                 if detect_collision(self,obj)and self in Giova.tears:
                     self.die()
 
     def die(self):
+            #removes the tears from the list of active tears
             Giova.tears.remove(self)
+            #deleates them from the screen.
             self.tear_geometry.place_forget()
             self.tear_geometry.delete()
             self.tear_geometry.destroy()
 
 
-"""THIS COULD BE CLEANED UP WITH INHERITANCE"""
+
 class Enemy_Tear():
+    """
+    Almost the same as a player tear
+    """
     def __init__(self):
         self.direction=[0,0]
         self.pos=[0,0]
@@ -425,29 +531,41 @@ class Static_Enemy():
     def __init__(self):
         self.direction=[0,0]
         self.pos=[700,350]
+        #enemy dimensions
         self.ybound=100
         self.xbound=100
+        #timer to shoot tears initialized at a random value to not sync up enemies
         self.timer=random.randint(1,99)
+        #timer reset value
         self.timerdefault=random.randint(80,120)
         self.hp=4
+        #placeholder for the enemy image
         self.enemy_geometry = None
     def update_state(self):
+        # Checks if the enemy is dead
         if self.hp<=0:
             kill_enemy(self)
         else:
+            
             self.detect_collisions()
+            #decrements the shooting timer
             self.timer-=1
+            #if its zero shoots a tear in the players direction
             if self.timer==0:
                 dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
                 newtear=Enemy_Tear()
                 newtear.pos=[self.pos[0]+self.xbound/2,self.pos[1]+self.ybound/2]
                 newtear.direction = normalize_vector(dir)
+                #adds the tear to the list of tears
                 world.currentroom.enemy_tears.append(newtear)
                 
                 
                 self.timer=self.timerdefault
         
     def detect_collisions(self):
+        """
+        Detects collisions with player's tears
+        """
         for tear in Giova.tears:
 
             if detect_collision(tear,self):
@@ -461,72 +579,92 @@ class Follow_Enemy():
         self.pos=[500,700]
         self.ybound=100
         self.xbound=100
-        self.timer=100
-        self.timerdefault=100
         self.hp=10
+        #enemy image
         self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=followenemy_img,anchor='nw')
 
 
     def update_state(self):
+        # Checks if the enemy is dead
         if self.hp<=0:
             kill_enemy(self)
         else:
+            #Copies the current position
             oldpos=self.pos.copy()
+            #Gets the direction towards the player
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
+            #normalizes it
             self.direction=normalize_vector(dir)
+            #moves towards it
             self.pos= [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
+            #updates the image
             delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            #checks for collisions
             if delta[0]!=0 or delta[1]!=0:
-            #bg.move(self.player_geometry,delta[0],delta[1])
                 bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
             if enemy_collisions(self)==2:
                 self.pos=oldpos
 
 class Random_Enemy():
+    """
+    A random enemy wouldnt have been challenging so this enemy is 
+    semi-random, so it picks a direction and follows it for a set amount
+    of time.
+    """
     def __init__(self):
         self.direction=[0,0]
         self.speed = 6
         self.pos=[800,700]
         self.ybound=80
         self.xbound=80
+        #timer for following a direction
         self.timer=random.randint(0,19)
+        #reset value for the tmeir
         self.timerdefault=20
         self.hp=10
+        """
+        Given a direction on the x or y axis it multiplies it by 0.5, 0, 1, -1 or -0.5
+        This is a placeholder for the x and y multipliers
+        """
         self.random=[1,1]
 
         self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=randomenemy_img,anchor='nw')
 
     def update_state(self):
+        #Checks if the enemy is alive
         if self.hp<=0:
             kill_enemy(self)
         else:
             self.timer-=1
             if self.timer<=0:
                 self.timer=self.timerdefault
+                #makes a random choice between the multipliers, with them being more skewed towards following the player
                 self.random=random.choices(random_dir, weights=[3,2,7,8,7],k=2)
             oldpos=self.pos.copy()
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
+            #moves towards the player
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed*self.random[0],self.pos[1]+self.direction[1]*self.speed*self.random[0]]
             delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            #updates the sprite
             if delta[0]!=0 or delta[1]!=0:
-            #bg.move(self.player_geometry,delta[0],delta[1])
                 bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
-            #we can remove the boundary checks for more performance but possibly out of bounds enemies
+            #checks if its out of bounds or colliding with something (we need to check if out of bounds because it can go backwards)
             if enemy_collisions(self)==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.pos=oldpos
 
-#This is horribly written
 class Boss_main():
     
     def __init__(self):
-        print("spawning boss")
         self.hp=60
+        #timer for attacks
         self.timer=200
-        self.timer_max=200 #the normal val is 200
+        self.timer_max=200 
         self.action=0
         
     def spawn(self):
+        """the boss has an head and 2 arms. It spawns them, sets their images and positions
+        """
         self.head=Boss_head()
         self.left_hand=Boss_hand()
         self.right_hand=Boss_hand()
@@ -536,59 +674,70 @@ class Boss_main():
         bg.tag_raise(self.right_hand.hand_id)
         bg.tag_raise(self.left_hand.hand_id)
     def update_state(self):
+        #decreases the timer
         self.timer-=1
         if self.timer==0:
+            #if the timer is zero deletes the current sprites and adds the default one
             bg.delete(self.head.head_id)
             self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=head_img,anchor='nw')
+            #sets the timer back to 200 and picks a random attack
             self.timer=self.timer_max
             self.action=random.randint(1,5)
         match self.action:
-            case 1:
+            case 1: #shoots a random amount of tears across the screen
+                #updates the animation every 25 frames
                 if self.timer%25==0:
                     bg.delete(self.head.head_id)
+                    #mod 8 since there 8 possible sprites. This is done to loop the animation
                     self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_chad_imgs[(self.timer//25)%8],anchor='nw')
                 if self.timer %50==0:
+                    #divides the screen based on the number of tears and spaces them out evenly. 
                     tear_number=random.randint(8,14)
                     for i in range(tear_number):
                         enemy_tear=Enemy_Tear()
                         enemy_tear.pos=[width/tear_number*i,500]
+                        #makes the tears come from the top and move downwards
                         enemy_tear.direction=[0,1]
                         world.currentroom.enemy_tears.append(enemy_tear)
-            case 2: #left hand
+            case 2: #changes the position of the left hand
                 print("left hand")
-                if self.timer>=80 and self.left_hand.pos[1]<580:
+                
+                if self.timer>=80 and self.left_hand.pos[1]<580:#moves downwards
                     self.left_hand.pos[1]+=self.left_hand.speed
-                elif self.timer>=80 and self.left_hand.pos[0]<1500:
+                elif self.timer>=80 and self.left_hand.pos[0]<1500:#moves right
                     self.left_hand.pos[0]+=self.left_hand.speed
-                elif self.timer<=80 and self.left_hand.pos[0]>385:
+                elif self.timer<=80 and self.left_hand.pos[0]>385:#moves back left
                     self.left_hand.pos[0]-=self.left_hand.speed
-                elif self.timer<=80 and self.left_hand.pos[1]>150:
+                elif self.timer<=80 and self.left_hand.pos[1]>150:#moves back up
                     self.left_hand.pos[1]-=self.left_hand.speed
+                #actually moves the hand
                 self.left_hand.update()
                 
-            case 3: #right hand
+            case 3:#changes the position of the right hand
                 print("right hand")
-                if self.timer>=80 and self.right_hand.pos[1]<580:
+                if self.timer>=80 and self.right_hand.pos[1]<580:#moves downwards
                     self.right_hand.pos[1]+=self.right_hand.speed
-                elif self.timer>=80 and self.right_hand.pos[0]>150:
+                elif self.timer>=80 and self.right_hand.pos[0]>150:#moves left
                     self.right_hand.pos[0]-=self.right_hand.speed
-                elif self.timer<=80 and self.right_hand.pos[0]<1260:
+                elif self.timer<=80 and self.right_hand.pos[0]<1260:#moves back right
                     self.right_hand.pos[0]+=self.right_hand.speed
-                elif self.timer<=80 and self.right_hand.pos[1]>150:
+                elif self.timer<=80 and self.right_hand.pos[1]>150:#moves back up
                     self.right_hand.pos[1]-=self.right_hand.speed
                 self.right_hand.update()
-            case 4: #front
+            case 4: #shoots tears from the front
+                #updates the animation
                 if self.timer%25==0:
                     bg.delete(self.head.head_id)
                     self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_scream_imgs[(self.timer//25)%8],anchor='nw')
                 if self.timer %50==0:
+                    #shoots 7 tears from the front, twice as fast
                     for i in range(7):
                         enemy_tear=Enemy_Tear()
                         enemy_tear.speed*=2
                         enemy_tear.pos=[760+66*i,500]
                         enemy_tear.direction=[0,1]
                         world.currentroom.enemy_tears.append(enemy_tear)
-            case 5:
+            case 5:#shoots some fast tears at the bottom, so that the player cant just stay still at the bottom.
                 if self.timer%25==0:
                     bg.delete(self.head.head_id)
                     self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_scream_imgs[(self.timer//25)%8],anchor='nw')
@@ -609,13 +758,13 @@ class Boss_main():
         if self.hp<=0:
             self.die()
     def die(self):
+        #if the boss is dead shows a victory message
         messagebox.showinfo("The Binding of  Giova","Hai Vinto")
         sys.exit()
 class Boss_head():
     def __init__(self):
        self.xbound=400
        self.ybound=400
-       #self.pos=[760,150]
        self.pos=[760,30]
        self.head_id=bg.create_image(self.pos[0],self.pos[1],image=head_img,anchor='nw')
     
@@ -628,8 +777,10 @@ class Boss_hand():
         self.speed=20
         self.hand_id=None
     def update(self):
+        """
+        Changes the postion of the hand when attacking
+        """
         bg.moveto(self.hand_id,self.pos[0],self.pos[1])
-        #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
 
 class Wall():
     def __init__(self):
@@ -640,9 +791,11 @@ class Wall():
     def update(self):
         self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
     def die(self):
+        """
+        Used to delete the wall when changing room
+        """
         self.enemy_geometry.place_forget()
         self.enemy_geometry.delete()
-        #self.enemy_geometry.destroy()
         world.currentroom.environment.remove(self)
         
 
@@ -673,11 +826,14 @@ class Heart():
 
 
 def input(event):
+    #gets the input from the player
     pressed=event.keycode
+    #if its in W, A, S, D
     if pressed in orientations:
+        #gets the rotation associated with the number and sets it for the direction
         rotate=orientations[pressed]
         Giova.direction[rotate[0]]=rotate[1]        
-            #print(f"updating state keycode:{pressed}, rotation {Giova.direction}")
+        #if the player isnt shooting and updates its direction, updates its iamge
         if not shooting and Giova.lastdir!=Giova.direction:
             if Giova.direction[1] == -1 :
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("back.png").resize((Giova.xbound,Giova.ybound)))
@@ -690,12 +846,16 @@ def input(event):
                     Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
                     
 
-                      
+    #if the player pressed an arrow key and the timer allows him to shoot tears      
     elif pressed in arrows and Giova.teartimer==Giova.maxteartimer:
+        #resets the timer
         Giova.teartimer=0
+        #spawns a new tears
         new_tear=Tear()
         spawn_tear(pressed,new_tear,Giova)
+        #adds it to the current tears
         Giova.tears.append(new_tear)
+        #changes the players image based on the direction
         match pressed:
             case 37:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("sinistra.png").resize((Giova.xbound,Giova.ybound)))
@@ -705,15 +865,21 @@ def input(event):
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("destra.png").resize((Giova.xbound,Giova.ybound)))
             case 40:
                 Giova.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((Giova.xbound,Giova.ybound)))
-    
+    #updates the players sprite.
     Giova.init_draw()
+
 def release(event):
+    """
+    Ran when letting go of a key
+    """
+
     global shooting
     pressed=event.keycode
+    #if the players lets go of a key updates his direction
     if pressed in orientations:
         rotate=orientations[pressed]
         Giova.direction[rotate[0]]=0
-        #print(f"Deleting state keycode:{pressed}, rotation {Giova.direction}")
+    #if the player lets go of an arrow key sets the shooting variable to false
     if pressed in arrows:
         shooting = False
 
