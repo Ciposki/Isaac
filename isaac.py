@@ -48,6 +48,8 @@ heartimg=ImageTk.PhotoImage(Image.open("heart.png").resize((50,50)))
 head_img=ImageTk.PhotoImage(Image.open("coin.png").resize((400,400)))
 hand_img=ImageTk.PhotoImage(Image.open("coin.png").resize((250,250)))
 
+followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+randomenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
 
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
@@ -90,9 +92,7 @@ def kill_enemy(object):
         heart.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
         heart.update()
     world.currentroom.enemies.remove(object)
-    object.enemy_geometry.place_forget()
-    object.enemy_geometry.delete()
-    object.enemy_geometry.destroy()
+    bg.delete(object.enemy_geometry)
 
 def normalize_vector(vector):
     magnitude = sum(i**2 for i in vector)**0.5
@@ -451,7 +451,9 @@ class Follow_Enemy():
         self.timer=100
         self.timerdefault=100
         self.hp=10
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=followenemy_img,anchor='nw')
+
+
     def update_state(self):
         if self.hp<=0:
             kill_enemy(self)
@@ -460,7 +462,10 @@ class Follow_Enemy():
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
-            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            if delta[0]!=0 or delta[1]!=0:
+            #bg.move(self.player_geometry,delta[0],delta[1])
+                bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
             if enemy_collisions(self)==2:
                 self.pos=oldpos
 
@@ -476,7 +481,7 @@ class Random_Enemy():
         self.hp=10
         self.random=[1,1]
 
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=randomenemy_img,anchor='nw')
 
     def update_state(self):
         if self.hp<=0:
@@ -490,7 +495,10 @@ class Random_Enemy():
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed*self.random[0],self.pos[1]+self.direction[1]*self.speed*self.random[0]]
-            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            if delta[0]!=0 or delta[1]!=0:
+            #bg.move(self.player_geometry,delta[0],delta[1])
+                bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
             #we can remove the boundary checks for more performance but possibly out of bounds enemies
             if enemy_collisions(self)==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.pos=oldpos
