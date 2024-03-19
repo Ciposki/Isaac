@@ -276,7 +276,7 @@ class player():
         self.invincibility_timer=0
         self.maxinvincibility_timer=10
         #damage dealt
-        self.damage = 1
+        self.damage = 100
         #coins held
         self.coins=0
         #creates text and an icon for coins
@@ -884,6 +884,10 @@ def release(event):
         shooting = False
 
 def update():
+    """
+    Ran every frame,if not in the menu updates the states of the player, every enemy, every tear,every enemy tear, the boss and checks collision with doors.
+    """
+
     if not ismenu:
         Giova.update_state()
         for single_tear in Giova.tears:
@@ -897,117 +901,175 @@ def update():
             door.detect_collision()
         if world.currentroom.boss:
             world.currentroom.boss.update_state()
+        #if there are no more enemies the room is cleared and the player can move to another room
         elif not world.currentroom.enemies:
             world.currentroom.cleared=True
     window.after(20,update)
 
-
+#Player instance
 Giova = player()
-"""enemies=[]
-enemy_tears=[]
-environment=[]"""
 
 
-"""Level generation stuff"""
 class PowerUp():
-    def __init__(self) -> None:
+    def __init__(self):
         self.pos = [0,0]
         self.xbound= 100
         self.ybound=100
+        #powerup type
         self.index=random.randint(0,2)
-        self.text=0
+        #powerup text
+        self.text=None
+        #powerup price
         self.price=0
         
     def draw(self):
+        """
+        Creates the powerup icon and the price text if its above 0
+        """
         self.geometry = bg.create_image(self.pos[0],self.pos[1],image=powerupimgs[self.index],anchor='nw') 
-        #self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
-        #self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.price>0:
             self.text=bg.create_text(self.pos[0]+self.xbound/2,self.pos[1]-30,text=self.price,font=smallfont,fill="#FEFAE0")
             
 
     def generate_powerup(self):
+        #when picking up a powerup clears the room so the player cant go in and out to get infinite powerups
         world.currentroom.cleared=True
+        #if the player has enough coins
         if Giova.coins>=self.price:
             Giova.coins-=self.price
             Giova.updateCoins()
             match self.index:
-                case 0:
+                case 0:#More damage
                     Giova.damage+=random.randint(1,4)
                     print(f"Damage:{Giova.damage}")
                 case 1:
+                    #Sets the player hp to the current max
                     Giova.hp=Giova.max_hp
+                    #increases the max
                     Giova.max_hp+=1
+                    #updates the hearts
                     Giova.draw_hearts()
                     print(f"HP:{Giova.hp}")
-                case 2:
+                case 2:#more speed
                     Giova.speed+=random.randint(1,3)
                     print(f"Speed:{Giova.speed}")
             self.die()
 
     def die(self):
+        """
+        Deletes the price and the corrisponding text (if theres one)
+        """
         bg.delete(self.geometry)
         world.currentroom.power_up.remove(self)
         if self.price>0:
             bg.delete(self.text)
-        """self.powerup_geometry.place_forget()
-        self.powerup_geometry.delete()
-        self.powerup_geometry.destroy()"""
-        
 
-
-"""
-
-Envrironment stuff
-"""
+#options that can be chosen when generating a level
 environment_options=[[Wall()],[]]
-walls=[]
+
+walls = []
+#Walls placed horizontally
 for i in range(3):
-    wall=Wall()
-    wall.pos[0]=500+500*i
+    # Creates a new wall instance
+    wall = Wall()  
+    # Sets the position of the wall
+    wall.pos[0] = 500 + 500 * i  
+    # Adds the wall to the list of walls
+    walls.append(wall)  
+# Adds this configuration as an environment option
+environment_options.append(walls)  
+
+# Resets the list for another configuration
+walls = []
+# Walls in the middle
+for i in range(3):
+    # Creates another wall instance
+    wall = Wall()  
+    # Positions the wall relative to room center
+    wall.pos = [width / 2 - 150 + 100 * i, height / 2 - 50]  
+    # Adds the new wall to the list
+    walls.append(wall)  
+ # Adds this configuration as another environment option
+environment_options.append(walls) 
+# Resets the list for another configuration
+walls = []
+#Diagonal walls
+for i in range(2):
+    wall = Wall()
+    if i == 0:
+        # Positions the first wall in the top-left 
+        wall.pos = [width / 4, height / 4]  
+    else:
+         # Positions the second wall in the bottom-right 
+        wall.pos = [3 * width / 4 - wall.xbound, 3 * height / 4 - wall.ybound] 
     walls.append(wall)
 environment_options.append(walls)
-walls=[]
-for i in range(3):
-    wall=Wall()
-    wall.pos=[width/2-150+100*i,height/2-50]
-    walls.append(wall)
+
+#creates skewed walls in the middle
+walls = []
+# Vertical wall
+wall = Wall()
+wall.pos = [width / 2 - wall.xbound / 2, height / 2 - 250]
+walls.append(wall)
+
+# Horizontal wall top
+wall = Wall()
+wall.pos = [width / 2 - 150, height / 2 - 150]
+walls.append(wall)
+
+# Horizontal wall bottom
+wall = Wall()
+wall.pos = [width / 2 + 50, height / 2 + 50]
+walls.append(wall)
 environment_options.append(walls)
-walls=[]
-
-
 
 
 
 class Room():
     def __init__(self):
+        #Defines which edges have doors
         self.doors=[None]*4
+        #holds the actual door objects
         self.door_objects=[]
+        #defines the enemies in a room
         self.enemies=[]
+        #defines the powerups
         self.power_up=[]
+        #defines the walls
         self.environment=[]
+        #defines the tears
         self.enemy_tears=[]
+        #defines the coins
         self.coins=[]
+        #defines the hearts
         self.hearts=[]
+        #if the room is cleread there are no enemies and the player can move to another room
         self.cleared=False
+        #room coordinates from the start
         self.coordinates=(0,0)
+        #room type
         self.type="normal"
+        #wall placement
         self.env_type=random.choice(environment_options)
+        #image used for the background
         self.roomimg = roomsimgs[random.randint(0,1)]
+        #boss object
         self.boss=None
+        #places the background
         bg.place(y=0,x=0)
     def generate_position(self, enemy):
         """
-        This should be rewritten
+        Generates a random position for an enemy within bounds that avoid walls and other enemies
         """
         bound=300
+        #sets the radom position
         enemy.pos= [random.randint(room_xbound+bound,width-room_xbound-bound), random.randint(room_ybound+bound,height-room_ybound-bound)]
-        objectt=0
-        
+        #iterates through walls and if theres a collisions starts over        
         for objectt in (self.environment):
             if (enemy==Follow_Enemy and detect_collision(enemy,objectt)) or detect_collision(enemy,objectt):
                 self.generate_position(enemy)
                 return      
+        #does the same for enemies
         for objectt in self.enemies:
             if (enemy==Follow_Enemy and detect_collision(objectt,enemy)) or detect_collision(enemy,objectt):
                 self.generate_position(enemy)
@@ -1015,19 +1077,25 @@ class Room():
             
 
     def generate(self,world):
+        """
+        Generates everything in a room when entering it
+        """
+        
         global sfondo
+        #removes the previous background (to add it later on)
         bg.delete(sfondo)
-        #Spawning doors
-        
-        
+        #Spawns doors
         for i in range(4):
+            #given a position if it has a door
             if self.doors[i]==1:
+                #spawns and rotates it
                 door=Door()
                 door.pos=door_positions[i].copy()            
                 rotate(door,i)
                 door.direction=i
                 
-                #this is to avoid crashes
+                """this is to avoid crashes. Copies the current coordinates and modifies them to get the type 
+                of the adjacent room, and changes the door color based on it."""
                 coordinates_holder=copy.deepcopy(self.coordinates)
                 coordinates=(coordinates_holder[0]+directions[i][0],coordinates_holder[1]+directions[i][1])
                 if coordinates in world.rooms:
@@ -1038,23 +1106,28 @@ class Room():
                             door.color="orange"
                         case "treasure":
                             door.color="yellow"
+                    #draws the door
                     door.spawn()
-                
+                    #appends it to the rooms door objects
                     self.door_objects.append(door)
             
-            
+        #spawns different things based on the room type
         match self.type:
             case "normal":
+                #spawns a normal background
                 sfondo = bg.create_image(width/2,height/2,image=self.roomimg)
                 self.environment=self.env_type.copy()
-        
+                #spawns walls
                 for obj in self.environment:
                     obj.update()
-                #Might be added to other type of room
+                #if the room isnt cleared spawns enemies
                 if not self.cleared:
+                    #generates the number of enemies
                     enemy_number=random.randint(2,5)
                     for i in range(enemy_number):
+                        #generates the enemy type
                         enemy_type=random.randint(0,2)
+                        #based on the type generates the instance
                         match enemy_type:
                             case 0:
                                 enemy=Static_Enemy()
@@ -1063,36 +1136,47 @@ class Room():
                                 enemy=Follow_Enemy()
                             case 2:
                                 enemy=Random_Enemy()
+                        
                         self.generate_position(enemy)
+                        #if its a static enemy draws the sprite here so it doesnt have to be updated, since it doesnt move.
                         if enemy_type==0:
                             enemy.enemy_geometry = bg.create_image(enemy.pos[0],enemy.pos[1],image=staticenemy_img,anchor='nw')
+                        #adds it to the room enemies
                         self.enemies.append(enemy)
 
                     
-            case "shop":
-                
+            case "shop":#if its a shop
+                #sets the background
                 sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[0])
+                #if the player hasnt entered the shop spawn 3 random powerups
                 if not self.cleared:
                     for i in range(3):
+                        #generates the price randomly
                         price=random.randint(3,7)
                         powerup = PowerUp()
+                        #sets price and position
                         powerup.price=price
                         powerup.pos=powerup_positions[i]
                         powerup.draw()
+                        #adds it to the room powerups
                         self.power_up.append(powerup)
-                        print("spawned")
                             
             case "boss":
+                #sets the background
                 sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[1])
+                #spawns the boss
                 self.cleared=False
                 self.boss=Boss_main()
                 self.boss.spawn()
+                #spawns the player in the bottom of the room, to avoid him spawning on top of the boss
                 Giova.Door_Move(2)
                 
                 
             case "treasure":
+                #sets the background
                 sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[2])
                 if not self.cleared:
+                    #spawns a random number of powerups
                     powNum= random.randint(1,2)
                     for i in range(powNum):
                         powerup = PowerUp()
@@ -1101,10 +1185,12 @@ class Room():
                         self.power_up.append(powerup)
                         print("spawned")
             case "start":
+                #sets the starting screen
                 sfondo = bg.create_image(width/2,height/2,image=special_roomsimgs[3])
+        #draws the player last, in order for him to be above the background
         Giova.init_draw()
+        #raises the players hearts, coin counter and coin icon above the background
         for i in Giova.hearts:
-            print("raised")
             bg.tag_raise(i)
         bg.tag_raise(Giova.coinicon)
         bg.tag_raise(Giova.coinslabel)
@@ -1120,9 +1206,9 @@ class Door():
         self.door_geometry.place(x=self.pos[0],y=self.pos[1])
     
     def detect_collision(self):
-        
+        """
+        if the player goes into a door change the current room"""
         if world.currentroom.cleared ==True and detect_collision(Giova,self):
-            #print("AAAAAAAAA")
             
             world.newroom(self.direction)
             
@@ -1136,31 +1222,47 @@ class Door():
 
 class World():
     def __init__(self):
+        #the max number of rooms
         self.max_rooms=random.randint(10,15)
+        #the current number of generated rooms
         self.generated_rooms=1
+        #the current number of boss rooms
         self.current_boss_rooms=0
+        #the current number of powerup rooms
         self.current_treasure_rooms=0
+        #the current number of shop rooms
         self.current_shop_rooms=0
+        #a dictionary matching room coordinates to room object, with the start room already initialized
         self.rooms={(0,0):Room()}
+        #rooms for which to generate doors
         self.frontier=[(0,0)]
+        #the current room. Initialized to the start
         self.currentroom=self.rooms[(0,0)]
+        #while the number of generated rooms is less than the max
         while self.generated_rooms<self.max_rooms:
+            #if theres rooms in the frontier
             if self.frontier:
+                #gets the last element from the frontier and removes it
                 room_coordinates=self.frontier[-1]
                 self.frontier.pop()
+                #sets it to the current generating room
                 current_room=self.rooms[room_coordinates]
                 #The directions are: TOP,LEFT,BOTTOM,RIGHT
                 for door_direction in range(4):
                     #creates doors in the current room
                     door_chance=random.randint(0,1)
+                    #if it is a 0
                     if not current_room.doors[door_direction]:
+                        #decides if to add a door
                         current_room.doors[door_direction]=door_chance
                         if door_chance==1:
-                            
+                            #gets the coordinates of the adjacent room
                             newroom_coordinates=(room_coordinates[0]+directions[door_direction][0],room_coordinates[1]+directions[door_direction][1])
+                            #if the room doesnt already exist generates it
                             if newroom_coordinates not in self.rooms:
-                                #generate a room
+                                #increases the counter
                                 self.generated_rooms+=1
+                                #gets random numbers for the room type
                                 if self.current_boss_rooms==0:
                                     boss_chance=random.randint(1,5)
                                 if self.current_treasure_rooms<=2:
@@ -1168,44 +1270,66 @@ class World():
                                 if self.current_shop_rooms==0:
                                     shop_chance=random.randint(0,5)
                                 
-                                #this is to ensure we get a boss room
+                                #gets a new room instance
                                 newroom=Room()
+                                #Adds it to the dictionary
                                 self.rooms[newroom_coordinates]=newroom
+                                """
+                                To ENSURE we get a boss rooms if the current amount of generable rooms is 2 it automatically spawns it.
+                                Otherwise it does a calculation increasing the probability based on the distance from the start.
+                                """
                                 if boss_chance+current_room.coordinates[0]+current_room.coordinates[1]>=10 or (self.max_rooms-self.generated_rooms<=2 and self.current_boss_rooms==0):
                                     print("boss at",newroom_coordinates)
+                                    
                                     self.current_boss_rooms+=1
+                                    #sets the new room type
                                     newroom.type="boss"
-
+                                    #sets the boss chance to 0
                                     boss_chance=0
+                                #Gets a random number for the treasure rooms
                                 elif treasure_chance==4:
                                     print("treasure at",newroom_coordinates)
                                     self.current_treasure_rooms+=1
                                     newroom.type="treasure"
                                     treasure_chance=0
+                                #does the same calculation as the boss for the shop
                                 elif shop_chance+current_room.coordinates[0]+current_room.coordinates[1]>=4:
                                     print("shop at",newroom_coordinates)
                                     self.current_shop_rooms+=1
                                     newroom.type="shop"
                                     shop_chance=0
+                                #otherwise generates a normal room
                                 else:
                                     newroom.type="normal"
                                     self.frontier.append(newroom_coordinates)
+                            #Sets the corrisponding door in the opposite room
                             self.rooms[newroom_coordinates].doors[(door_direction+2)%4]=1
+                            #sets the coordinates
                             newroom.coordinates=newroom_coordinates
+            #if there arent rooms in the frontier
             else:
+                #gets all of the rooms
                 rooms=list(self.rooms.keys())
+                #picks a random room
                 choice=random.choice(rooms)
+                #if its a normal type of room adds it to the frontier
                 if self.rooms[choice].type=="normal":
                     self.frontier.append(choice)
-        #self.currentroom.type="boss"
+        #after its done generating sets the beginning rooms type
         self.currentroom.type="start"
+        #generates it
         self.currentroom.generate(self)
+        #prints stats
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
-        #this is to avoid crashes
+        """
+        Deletes everything in the current room and changes room
+        """
+        #this is to avoid crashes. copies the current coordinates and modifies them to get those of the new room
         print("direction",direction)
         coordinates_holder=copy.deepcopy(self.currentroom.coordinates)
         newroom_index=(coordinates_holder[0]+directions[direction][0],coordinates_holder[1]+directions[direction][1])
+        #if the room exists deletes everything
         if newroom_index in self.rooms:
             print("from",self.currentroom.coordinates)
             print("to",newroom_index)
@@ -1225,11 +1349,15 @@ class World():
                 self.currentroom.power_up[0].die()
             while self.currentroom.hearts:
                 self.currentroom.hearts[0].die()
+            #sets the new room
             self.currentroom=self.rooms[newroom_index]
-            #this is also to avoid weirdness
+            #this is also to avoid weirdness. Sets the new room coordinates to those calculated above
             self.currentroom.coordinates=newroom_index
+            #changes the player direction to that of the corrispoding room. 
             direction=(direction+2)%4
+            #moves the player
             Giova.Door_Move(direction)
+            #generates the new room
             self.currentroom.generate(self)
             
 
