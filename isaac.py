@@ -203,9 +203,6 @@ def rotate(self,deg):
             self.pos[1]-=self.ybound/2
 class Menu():
     def __init__(self) -> None:
-        # Initializes fonts for menu text and title
-        self.font = font.Font(size=50, family="hooge 05_55")
-        self.titleFont = font.Font(size=100, weight="bold", family="hooge 05_55")
         # Creates a canvas for the menu background
         self.menubg = tk.Canvas(width=width, height=height, bg="Black")
         # Places the background image in the center of the canvas
