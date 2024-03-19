@@ -7,6 +7,9 @@ import sys
 from PIL import ImageTk, Image
 from tkinter import messagebox
 import copy
+import simpleaudio as sa
+
+
 sys.setrecursionlimit(9999)
 #dimensions to not make the player walk on walls
 room_xbound=130
@@ -108,6 +111,11 @@ titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
 smallfont = font.Font(size=35,family="hooge 05_55")
 
 
+def play_sound_async(file_path):
+    wave_obj = sa.WaveObject.from_wave_file(file_path)
+    play_obj = wave_obj.play()
+    # play_obj.wait_done()  # Use this line if you want to wait for the sound to finish playing
+
 def kill_enemy(object):
     """
     When killing an enemy removes it and rolls to generate nothing, a coin or an heart
@@ -166,6 +174,7 @@ def enemy_collisions(self):
             if detect_collision(tear,self):
                 #takes damage
                 self.hp-=Giova.damage
+                play_sound_async("hit.wav")
                 tear.die()
                 return 1
     #if theres a collision with another enemys tear
@@ -231,6 +240,7 @@ class Menu():
     def play(self):
         """When start is clicked"""
         #sets menu to false
+        play_sound_async("play.wav")
         global ismenu
         ismenu = False
         
@@ -384,6 +394,7 @@ class player():
                 messagebox.showinfo("The Binding of Giova","Sei Morto")
                 sys.exit()
             else:
+                play_sound_async("Dolore.wav")
                 #otherwise lowers the players hp
                 self.hp-=damage
                 #sets the invincibility timer to 1 so it can tick up to the max value
@@ -931,6 +942,7 @@ class PowerUp():
             
 
     def generate_powerup(self):
+        play_sound_async("powerup.wav")
         #when picking up a powerup clears the room so the player cant go in and out to get infinite powerups
         world.currentroom.cleared=True
         #if the player has enough coins
