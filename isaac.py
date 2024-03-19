@@ -184,6 +184,7 @@ def enemy_collisions(self):
             return 1
     #if theres a collision with the player
     if detect_collision(Giova,self):
+        Giova.take_damage(1)
         return 2
     #if theres a collision with an object
     for object in world.currentroom.environment:
@@ -283,7 +284,7 @@ class player():
         self.xbound=100
         #invincibility timer
         self.invincibility_timer=0
-        self.maxinvincibility_timer=10
+        self.maxinvincibility_timer=21
         #damage dealt
         self.damage = 3
         #coins held
@@ -328,7 +329,6 @@ class player():
         if self.detect_collisions()==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
             self.pos=oldpos
 
-        print(self.invincibility_timer)
         #if the invincibility timer gets to the max value sets it to zero
         if self.invincibility_timer==self.maxinvincibility_timer-1:
             self.invincibility_timer=0
