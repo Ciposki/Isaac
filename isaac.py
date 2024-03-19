@@ -63,9 +63,9 @@ netor_chad_imgs=[
 ]
 netor_scream_imgs+=netor_scream_imgs[::-1]
 netor_chad_imgs+=netor_chad_imgs[::-1]
-followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+followenemy_img = ImageTk.PhotoImage(Image.open("bro.png").resize((100,100)))
 randomenemy_img = ImageTk.PhotoImage(Image.open("gosts.png").resize((100,100)))
-
+staticenemy_img = ImageTk.PhotoImage(Image.open("static.png").resize((100,100)))
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
@@ -215,7 +215,7 @@ class player():
         self.direction = [0,0]
         self.lastdir= [0,0]
         self.pos = [width/2,height/2]
-        self.speed = 15 #og is 5
+        self.speed = 5 
         self.tears=[]
         self.hp=3
         self.hearts=[]
@@ -226,7 +226,7 @@ class player():
         self.xbound=100
         self.invincibility_timer=0
         self.maxinvincibility_timer=10
-        self.damage = 100
+        self.damage = 1
         self.coins=0
         self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
         self.coinicon=bg.create_image(1730,50,image=coinimg,anchor='nw')
@@ -430,10 +430,8 @@ class Static_Enemy():
         self.timer=random.randint(1,99)
         self.timerdefault=random.randint(80,120)
         self.hp=4
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
-        
+        self.enemy_geometry = None
     def update_state(self):
-        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.hp<=0:
             kill_enemy(self)
         else:
@@ -894,11 +892,14 @@ class Room():
                         match enemy_type:
                             case 0:
                                 enemy=Static_Enemy()
+                                
                             case 1:
                                 enemy=Follow_Enemy()
                             case 2:
                                 enemy=Random_Enemy()
                         self.generate_position(enemy)
+                        if enemy_type==0:
+                            enemy.enemy_geometry = bg.create_image(enemy.pos[0],enemy.pos[1],image=staticenemy_img,anchor='nw')
                         self.enemies.append(enemy)
 
                     
