@@ -64,6 +64,8 @@ netor_chad_imgs=[
     ImageTk.PhotoImage(Image.open("netor6.png").resize((400,400))),
     ImageTk.PhotoImage(Image.open("netor7.png").resize((400,400)))
 ]
+
+rockimg = ImageTk.PhotoImage(Image.open("Rock.png").resize((100,100)))
 netor_scream_imgs+=netor_scream_imgs[::-1]
 netor_chad_imgs+=netor_chad_imgs[::-1]
 followenemy_img = ImageTk.PhotoImage(Image.open("bro.png").resize((100,100)))
@@ -784,15 +786,15 @@ class Wall():
         self.pos=[300,500]
         self.ybound=100
         self.xbound=100
-        self.enemy_geometry = tk.Canvas(window,bg="black",height=100,width=100)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=rockimg,anchor='nw')
     def update(self):
-        self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+        bg.delete(self.enemy_geometry)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=rockimg,anchor='nw')
     def die(self):
         """
         Used to delete the wall when changing room
         """
-        self.enemy_geometry.place_forget()
-        self.enemy_geometry.delete()
+        bg.delete(self.enemy_geometry)
         world.currentroom.environment.remove(self)
         
 
