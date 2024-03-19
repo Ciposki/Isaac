@@ -71,7 +71,9 @@ directions=[(0,1),(1,0),(0,-1),(-1,0)]
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
-
+fonT = font.Font(size=50,family="hooge 05_55")
+titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
+smallfont = font.Font(size=35,family="hooge 05_55")
 
 def kill_enemy(object):
     chance=random.randint(1,1)
@@ -159,11 +161,11 @@ class Menu():
         self.titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
         self.menubg=tk.Canvas(width=width,height=height,bg="Black")
         self.sfondo = self.menubg.create_image(width/2,height/2,image=roomsimgs[0])
-        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=self.titleFont,fill="#FEFAE0")
+        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=titleFont,fill="#FEFAE0")
         
         
-        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
-        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
+        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
+        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
         self.xbound =800
         self.ybound=100
         self.place()
@@ -208,9 +210,8 @@ class player():
         self.maxinvincibility_timer=10
         self.damage = 100
         self.coins=0
-        self.coinslabel  = tk.Label(text=f"x{self.coins}",background="#9c6644")
-        self.coinslabel.place(x=1800,y=50)
-        self.coinicon=bg.create_image(1750,50,image=coinimg,anchor='nw')
+        self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
+        self.coinicon=bg.create_image(1730,50,image=coinimg,anchor='nw')
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
         self.draw_hearts()
@@ -269,7 +270,7 @@ class player():
 
                 coin.die()
                 self.coins+=1
-                self.coinslabel.config(text=f"x{self.coins}")
+                self.updateCoins()
                 #print(self.coins)
                 return 3
         for heart in world.currentroom.hearts:
@@ -323,7 +324,9 @@ class player():
             heart = bg.create_image(self.posx,50,image=heartimg,anchor='nw')
             self.hearts.append(heart)
             self.posx+=50
-        
+    def updateCoins(self):
+        bg.delete(self.coinslabel)
+        self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
 
             
 
@@ -730,7 +733,7 @@ class PowerUp():
         world.currentroom.cleared=True
         if Giova.coins>=self.price:
             Giova.coins-=self.price
-            Giova.coinslabel.config(text=f"x{Giova.coins}")
+            Giova.updateCoins()
             match self.index:
                 case 0:
                     Giova.damage+=random.randint(1,4)
@@ -885,6 +888,7 @@ class Room():
             print("raised")
             bg.tag_raise(i)
         bg.tag_raise(Giova.coinicon)
+        bg.tag_raise(Giova.coinslabel)
 class Door():
     def __init__(self) -> None:
         self.xbound=100
