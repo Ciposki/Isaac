@@ -45,9 +45,24 @@ coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((25,25)))
 heartimg=ImageTk.PhotoImage(Image.open("heart.png").resize((50,50)))
 
 
-head_img=ImageTk.PhotoImage(Image.open("coin.png").resize((400,400)))
-hand_img=ImageTk.PhotoImage(Image.open("coin.png").resize((250,250)))
+head_img=ImageTk.PhotoImage(Image.open("netor1.png").resize((400,400)))
+l_hand_img=ImageTk.PhotoImage(Image.open("lhand.png").resize((250,250)))
+r_hand_img=ImageTk.PhotoImage(Image.open("rhand.png").resize((250,250)))
 
+netor_scream_imgs=[
+    ImageTk.PhotoImage(Image.open("netor1.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor2.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor3.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor4.png").resize((400,400)))
+]
+netor_chad_imgs=[
+    ImageTk.PhotoImage(Image.open("netor1.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor5.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor6.png").resize((400,400))),
+    ImageTk.PhotoImage(Image.open("netor7.png").resize((400,400)))
+]
+netor_scream_imgs+=netor_scream_imgs[::-1]
+netor_chad_imgs+=netor_chad_imgs[::-1]
 followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
 randomenemy_img = ImageTk.PhotoImage(Image.open("gosts.png").resize((100,100)))
 
@@ -286,7 +301,7 @@ class player():
                 return 3
         if world.currentroom.type=="boss":
             boss=world.currentroom.boss
-            if detect_collision(self,boss.left_hand) or detect_collision(self,boss.right_hand):
+            if detect_collision(self,boss.left_hand) or detect_collision(self,boss.right_hand) or detect_collision(self,boss.head):
                 self.take_damage(1)
 
                 return 2
@@ -518,16 +533,22 @@ class Boss_main():
         self.left_hand=Boss_hand()
         self.right_hand=Boss_hand()
         self.right_hand.pos=[1260,150]
-        self.right_hand.speed=20
-        self.left_hand.spawn()
-        self.right_hand.spawn()
+        self.left_hand.hand_id=bg.create_image(self.left_hand.pos[0],self.left_hand.pos[1],image=l_hand_img,anchor='nw')
+        self.right_hand.hand_id=bg.create_image(self.right_hand.pos[0],self.right_hand.pos[1],image=r_hand_img,anchor='nw')
+        bg.tag_raise(self.right_hand.hand_id)
+        bg.tag_raise(self.left_hand.hand_id)
     def update_state(self):
         self.timer-=1
         if self.timer==0:
+            bg.delete(self.head.head_id)
+            self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=head_img,anchor='nw')
             self.timer=self.timer_max
             self.action=random.randint(1,5)
         match self.action:
             case 1:
+                if self.timer%25==0:
+                    bg.delete(self.head.head_id)
+                    self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_chad_imgs[(self.timer//25)%8],anchor='nw')
                 if self.timer %50==0:
                     tear_number=random.randint(8,14)
                     for i in range(tear_number):
@@ -559,6 +580,9 @@ class Boss_main():
                     self.right_hand.pos[1]-=self.right_hand.speed
                 self.right_hand.update()
             case 4: #front
+                if self.timer%25==0:
+                    bg.delete(self.head.head_id)
+                    self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_scream_imgs[(self.timer//25)%8],anchor='nw')
                 if self.timer %50==0:
                     for i in range(7):
                         enemy_tear=Enemy_Tear()
@@ -567,6 +591,9 @@ class Boss_main():
                         enemy_tear.direction=[0,1]
                         world.currentroom.enemy_tears.append(enemy_tear)
             case 5:
+                if self.timer%25==0:
+                    bg.delete(self.head.head_id)
+                    self.head.head_id=bg.create_image(self.head.pos[0],self.head.pos[1],image=netor_scream_imgs[(self.timer//25)%8],anchor='nw')
                 if self.timer%50==0 or self.timer==0:
                     enemy_tear=Enemy_Tear()
                     enemy_tear.timer=500
@@ -590,9 +617,8 @@ class Boss_head():
     def __init__(self):
        self.xbound=400
        self.ybound=400
-       self.pos=[760,150]
-       #self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
-       #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+       #self.pos=[760,150]
+       self.pos=[760,30]
        self.head_id=bg.create_image(self.pos[0],self.pos[1],image=head_img,anchor='nw')
     
 
@@ -602,10 +628,7 @@ class Boss_hand():
         self.ybound=250
         self.pos=[385,150]
         self.speed=20
-    def spawn(self):
-        self.hand_id=bg.create_image(self.pos[0],self.pos[1],image=hand_img,anchor='nw')
-        #self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
-        #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+        self.hand_id=None
     def update(self):
         bg.moveto(self.hand_id,self.pos[0],self.pos[1])
         #self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
@@ -697,7 +720,6 @@ def release(event):
         shooting = False
 
 def update():
-    print(world.currentroom.coordinates)
     if not ismenu:
         Giova.update_state()
         for single_tear in Giova.tears:
@@ -1008,8 +1030,8 @@ class World():
                 choice=random.choice(rooms)
                 if self.rooms[choice].type=="normal":
                     self.frontier.append(choice)
+        #self.currentroom.type="boss"
         self.currentroom.type="start"
-        #self.currentroom.type="start"
         self.currentroom.generate(self)
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
