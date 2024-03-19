@@ -9,7 +9,8 @@ import random
 import sys
 from PIL import ImageTk, Image
 from tkinter import messagebox
-
+import copy
+sys.setrecursionlimit(9999)
 room_xbound=130
 room_ybound=140
 
@@ -28,17 +29,17 @@ IMAGES
 roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))), 
            ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080)))]
 
-special_roomsimgs=[ImageTk.PhotoImage(Image.open("room0.png").resize((1920,1080))),  #shop
-           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))), #boss
-           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))), #treasure
-           ImageTk.PhotoImage(Image.open("room1.png").resize((1920,1080))) #start
+special_roomsimgs=[ImageTk.PhotoImage(Image.open("shoproom.png").resize((1920,1080))),  #shop
+           ImageTk.PhotoImage(Image.open("bossroom.png").resize((1920,1080))), #boss
+           ImageTk.PhotoImage(Image.open("itemroom.png").resize((1920,1080))), #treasure
+           ImageTk.PhotoImage(Image.open("startroom.png").resize((1920,1080))) #start
            ]
 
 
 powerupimgs=[
-    ImageTk.PhotoImage(Image.open("front.png").resize((100,100))), #Damage
-    ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))), #Hp
-    ImageTk.PhotoImage(Image.open("room0.png").resize((100,100))) #Speed
+    ImageTk.PhotoImage(Image.open("shotgun.png").resize((100,100))), #Damage
+    ImageTk.PhotoImage(Image.open("hpup.png").resize((100,100))), #Hp
+    ImageTk.PhotoImage(Image.open("shoe.png").resize((100,100))) #Speed
 ]
 coinimg= ImageTk.PhotoImage(Image.open("coin.png").resize((25,25)))
 heartimg=ImageTk.PhotoImage(Image.open("heart.png").resize((50,50)))
@@ -67,7 +68,9 @@ arrows={
     40:(1,1)#↓    
 }
 shooting = False
-directions=[(0,1),(1,0),(0,-1),(-1,0)]
+#directions=[(0,1),(1,0),(0,-1),(-1,0)]
+directions=[(0,-1),(-1,0),(0,1),(1,0)]
+
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
@@ -76,7 +79,7 @@ titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
 smallfont = font.Font(size=35,family="hooge 05_55")
 
 def kill_enemy(object):
-    chance=random.randint(1,1)
+    chance=random.randint(1,10)
     if chance<=5:
         coin=Coin()
         coin.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
@@ -197,7 +200,7 @@ class player():
         self.direction = [0,0]
         self.lastdir= [0,0]
         self.pos = [width/2,height/2]
-        self.speed = 5
+        self.speed = 15 #og is 5
         self.tears=[]
         self.hp=3
         self.hearts=[]
@@ -284,6 +287,8 @@ class player():
         if world.currentroom.type=="boss":
             boss=world.currentroom.boss
             if detect_collision(self,boss.left_hand) or detect_collision(self,boss.right_hand):
+                self.take_damage(1)
+
                 return 2
         return 0
     def take_damage(self,damage):
@@ -441,8 +446,8 @@ class Follow_Enemy():
         self.direction=[0,0]
         self.speed = 2
         self.pos=[500,700]
-        self.ybound=200
-        self.xbound=200
+        self.ybound=100
+        self.xbound=100
         self.timer=100
         self.timerdefault=100
         self.hp=10
@@ -684,6 +689,7 @@ def release(event):
         shooting = False
 
 def update():
+    print(world.currentroom.coordinates)
     if not ismenu:
         Giova.update_state()
         for single_tear in Giova.tears:
@@ -755,11 +761,25 @@ class PowerUp():
         self.powerup_geometry.destroy()"""
         
 
-    
+
 """
-This generates a phantom block
+
+Envrironment stuff
 """
 environment_options=[[Wall()],[]]
+walls=[]
+for i in range(3):
+    wall=Wall()
+    wall.pos[0]=500+500*i
+    walls.append(wall)
+environment_options.append(walls)
+walls=[]
+for i in range(3):
+    wall=Wall()
+    wall.pos=[width/2-150+100*i,height/2-50]
+    walls.append(wall)
+environment_options.append(walls)
+walls=[]
 
 
 
@@ -812,16 +832,21 @@ class Room():
                 door.pos=door_positions[i].copy()            
                 rotate(door,i)
                 door.direction=i
-                match world.rooms[(self.coordinates[0]+directions[i][0],self.coordinates[1]+directions[i][1])].type:
-                    case "boss":
-                        door.color="purple"
-                    case "shop":
-                        door.color="orange"
-                    case "treasure":
-                        door.color="yellow"
-                door.spawn()
                 
-                self.door_objects.append(door)
+                #this is to avoid crashes
+                coordinates_holder=copy.deepcopy(self.coordinates)
+                coordinates=(coordinates_holder[0]+directions[i][0],coordinates_holder[1]+directions[i][1])
+                if coordinates in world.rooms:
+                    match world.rooms[coordinates].type:
+                        case "boss":
+                            door.color="purple"
+                        case "shop":
+                            door.color="orange"
+                        case "treasure":
+                            door.color="yellow"
+                    door.spawn()
+                
+                    self.door_objects.append(door)
             
             
         match self.type:
@@ -976,16 +1001,17 @@ class World():
                 if self.rooms[choice].type=="normal":
                     self.frontier.append(choice)
         self.currentroom.type="start"
-        #self.currentroom.type="boss"
+        #self.currentroom.type="start"
         self.currentroom.generate(self)
         print(f"rooms: {self.generated_rooms} shops{self.current_shop_rooms} treasures {self.current_treasure_rooms}")
     def newroom(self,direction):
         #this is to avoid crashes
         print("direction",direction)
-        newroom_index=(self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1])
+        coordinates_holder=copy.deepcopy(self.currentroom.coordinates)
+        newroom_index=(coordinates_holder[0]+directions[direction][0],coordinates_holder[1]+directions[direction][1])
         if newroom_index in self.rooms:
-            print(self.rooms)
             print("from",self.currentroom.coordinates)
+            print("to",newroom_index)
             while self.currentroom.enemies:
                 self.currentroom.enemies[0].die()
             while self.currentroom.enemy_tears:
@@ -1003,10 +1029,12 @@ class World():
             while self.currentroom.hearts:
                 self.currentroom.hearts[0].die()
             self.currentroom=self.rooms[newroom_index]
+            #this is also to avoid weirdness
+            self.currentroom.coordinates=newroom_index
             direction=(direction+2)%4
             Giova.Door_Move(direction)
             self.currentroom.generate(self)
-            print("to",self.currentroom.coordinates)
+            
 
 world=World()      
 Menuobj =Menu()
