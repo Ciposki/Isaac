@@ -35,5 +35,7 @@ root.bind('<Right>', move_image)  # Moves the image on pressing the right arrow 
 
 head_img=ImageTk.PhotoImage(Image.open("room0.png").resize((100,100)))
 head_id=canvas.create_image(100,100,image=head_img)
+#canvas.tag_raise(head_id)
+canvas.tag_lower(head_id)
 
 root.mainloop()

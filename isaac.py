@@ -9,7 +9,7 @@ import random
 import sys
 from PIL import ImageTk, Image
 from tkinter import messagebox
-
+import copy
 room_xbound=130
 room_ybound=140
 
@@ -67,7 +67,9 @@ arrows={
     40:(1,1)#↓    
 }
 shooting = False
-directions=[(0,1),(1,0),(0,-1),(-1,0)]
+#directions=[(0,1),(1,0),(0,-1),(-1,0)]
+directions=[(0,-1),(-1,0),(0,1),(1,0)]
+
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
@@ -195,7 +197,7 @@ class player():
         self.direction = [0,0]
         self.lastdir= [0,0]
         self.pos = [width/2,height/2]
-        self.speed = 5
+        self.speed = 15 #og is 5
         self.tears=[]
         self.hp=3
         self.hearts=[]
@@ -755,11 +757,25 @@ class PowerUp():
         self.powerup_geometry.destroy()"""
         
 
-    
+
 """
-This generates a phantom block
+
+Envrironment stuff
 """
 environment_options=[[Wall()],[]]
+walls=[]
+for i in range(3):
+    wall=Wall()
+    wall.pos[0]=500+500*i
+    walls.append(wall)
+environment_options.append(walls)
+walls=[]
+for i in range(3):
+    wall=Wall()
+    wall.pos=[width/2-150+100*i,height/2-50]
+    walls.append(wall)
+environment_options.append(walls)
+walls=[]
 
 
 
@@ -812,16 +828,21 @@ class Room():
                 door.pos=door_positions[i].copy()            
                 rotate(door,i)
                 door.direction=i
-                match world.rooms[(self.coordinates[0]+directions[i][0],self.coordinates[1]+directions[i][1])].type:
-                    case "boss":
-                        door.color="purple"
-                    case "shop":
-                        door.color="orange"
-                    case "treasure":
-                        door.color="yellow"
-                door.spawn()
                 
-                self.door_objects.append(door)
+                #this is to avoid crashes
+                coordinates_holder=copy.deepcopy(self.coordinates)
+                coordinates=(coordinates_holder[0]+directions[i][0],coordinates_holder[1]+directions[i][1])
+                if coordinates in world.rooms:
+                    match world.rooms[coordinates].type:
+                        case "boss":
+                            door.color="purple"
+                        case "shop":
+                            door.color="orange"
+                        case "treasure":
+                            door.color="yellow"
+                    door.spawn()
+                
+                    self.door_objects.append(door)
             
             
         match self.type:
@@ -981,10 +1002,11 @@ class World():
     def newroom(self,direction):
         #this is to avoid crashes
         print("direction",direction)
-        newroom_index=(self.currentroom.coordinates[0]+directions[direction][0],self.currentroom.coordinates[1]+directions[direction][1])
+        coordinates_holder=copy.deepcopy(self.currentroom.coordinates)
+        newroom_index=(coordinates_holder[0]+directions[direction][0],coordinates_holder[1]+directions[direction][1])
         if newroom_index in self.rooms:
-            print(self.rooms)
             print("from",self.currentroom.coordinates)
+            print("to",newroom_index)
             while self.currentroom.enemies:
                 self.currentroom.enemies[0].die()
             while self.currentroom.enemy_tears:
@@ -1005,7 +1027,7 @@ class World():
             direction=(direction+2)%4
             Giova.Door_Move(direction)
             self.currentroom.generate(self)
-            print("to",self.currentroom.coordinates)
+            
 
 world=World()      
 Menuobj =Menu()
