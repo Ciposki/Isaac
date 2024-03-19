@@ -62,7 +62,9 @@ netor_chad_imgs=[
     ImageTk.PhotoImage(Image.open("netor7.png").resize((400,400)))
 ]
 netor_scream_imgs+=netor_scream_imgs[::-1]
-netor_chad_imgs+=netor_chad_imgs[::-1]
+netor_chad_imgs+=netor_chad_imgs[::-1]followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+randomenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
 window.geometry("1920x1080")
@@ -88,7 +90,9 @@ directions=[(0,-1),(-1,0),(0,1),(1,0)]
 door_positions=([width/2,room_ybound],[room_xbound-4.9,height/2],[width/2,height-room_ybound+15],[width-room_xbound-10.5,height/2])
 powerup_positions=[[360,500],[960,500],[1560,500]]
 
-
+fonT = font.Font(size=50,family="hooge 05_55")
+titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
+smallfont = font.Font(size=35,family="hooge 05_55")
 
 def kill_enemy(object):
     chance=random.randint(1,10)
@@ -102,9 +106,7 @@ def kill_enemy(object):
         heart.pos=[object.pos[0]+object.xbound/2,object.pos[1]+object.ybound/2]
         heart.update()
     world.currentroom.enemies.remove(object)
-    object.enemy_geometry.place_forget()
-    object.enemy_geometry.delete()
-    object.enemy_geometry.destroy()
+    bg.delete(object.enemy_geometry)
 
 def normalize_vector(vector):
     magnitude = sum(i**2 for i in vector)**0.5
@@ -176,11 +178,11 @@ class Menu():
         self.titleFont= font.Font(size=100,weight="bold",family="hooge 05_55")
         self.menubg=tk.Canvas(width=width,height=height,bg="Black")
         self.sfondo = self.menubg.create_image(width/2,height/2,image=roomsimgs[0])
-        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=self.titleFont,fill="#FEFAE0")
+        self.title=self.menubg.create_text(width/2,300,text="The Binding Of Giova",font=titleFont,fill="#FEFAE0")
         
         
-        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
-        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=self.font,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
+        self.playbtn = tk.Button(window,text="Start",command=self.play,relief="ridge",width=50,height=2,font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
+        self.quitbtn = tk.Button(window,text="Quit",command=sys.exit,relief="ridge",font=fonT,bg="#386641",activebackground="#6a994e",fg="#FEFAE0")
         self.xbound =800
         self.ybound=100
         self.place()
@@ -225,9 +227,8 @@ class player():
         self.maxinvincibility_timer=10
         self.damage = 100
         self.coins=0
-        self.coinslabel  = tk.Label(text=f"x{self.coins}",background="#9c6644")
-        self.coinslabel.place(x=1800,y=50)
-        self.coinicon=bg.create_image(1750,50,image=coinimg,anchor='nw')
+        self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
+        self.coinicon=bg.create_image(1730,50,image=coinimg,anchor='nw')
         self.Giovaimg = ImageTk.PhotoImage(Image.open("front.png").resize((self.xbound,self.ybound)))
         self.player_geometry = bg.create_image(self.pos[0],self.pos[1],image=self.Giovaimg,anchor='nw') 
         self.draw_hearts()
@@ -286,7 +287,7 @@ class player():
 
                 coin.die()
                 self.coins+=1
-                self.coinslabel.config(text=f"x{self.coins}")
+                self.updateCoins()
                 #print(self.coins)
                 return 3
         for heart in world.currentroom.hearts:
@@ -342,7 +343,9 @@ class player():
             heart = bg.create_image(self.posx,50,image=heartimg,anchor='nw')
             self.hearts.append(heart)
             self.posx+=50
-        
+    def updateCoins(self):
+        bg.delete(self.coinslabel)
+        self.coinslabel = bg.create_text(1800,60,text=f"x{self.coins}",font=smallfont,fill="#FEFAE0")
 
             
 
@@ -462,7 +465,9 @@ class Follow_Enemy():
         self.timer=100
         self.timerdefault=100
         self.hp=10
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=followenemy_img,anchor='nw')
+
+
     def update_state(self):
         if self.hp<=0:
             kill_enemy(self)
@@ -471,7 +476,10 @@ class Follow_Enemy():
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed,self.pos[1]+self.direction[1]*self.speed]
-            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            if delta[0]!=0 or delta[1]!=0:
+            #bg.move(self.player_geometry,delta[0],delta[1])
+                bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
             if enemy_collisions(self)==2:
                 self.pos=oldpos
 
@@ -487,7 +495,7 @@ class Random_Enemy():
         self.hp=10
         self.random=[1,1]
 
-        self.enemy_geometry = tk.Canvas(window,bg="red",height=self.ybound,width=self.xbound)
+        self.enemy_geometry = bg.create_image(self.pos[0],self.pos[1],image=randomenemy_img,anchor='nw')
 
     def update_state(self):
         if self.hp<=0:
@@ -501,7 +509,10 @@ class Random_Enemy():
             dir = [Giova.pos[0]-self.pos[0],Giova.pos[1]-self.pos[1]]
             self.direction=normalize_vector(dir)
             self.pos= [self.pos[0]+self.direction[0]*self.speed*self.random[0],self.pos[1]+self.direction[1]*self.speed*self.random[0]]
-            self.enemy_geometry.place(x=self.pos[0],y=self.pos[1])
+            delta=[self.pos[0]-oldpos[0],self.pos[1]-oldpos[1]]
+            if delta[0]!=0 or delta[1]!=0:
+            #bg.move(self.player_geometry,delta[0],delta[1])
+                bg.moveto(self.enemy_geometry,self.pos[0],self.pos[1])
             #we can remove the boundary checks for more performance but possibly out of bounds enemies
             if enemy_collisions(self)==2 or(self.pos[0]<room_xbound) or(self.pos[1]<room_ybound) or (self.pos[0]+self.xbound>width-room_xbound) or (self.pos[1]+self.ybound>height-room_ybound+12):
                 self.pos=oldpos
@@ -747,17 +758,14 @@ class PowerUp():
         #self.powerup_geometry= tk.Canvas(window,bg="purple",height=self.ybound,width=self.xbound)
         #self.powerup_geometry.place(x=self.pos[0],y=self.pos[1])
         if self.price>0:
-            self.text=tk.Label(window, text =self.price)
-            self.text.config(font =("Courier", 14))
-            #self.text.lower()
-            self.text.place(x=self.pos[0]+self.xbound/2,y=self.pos[1]-30)
+            self.text=bg.create_text(self.pos[0]+self.xbound/2,self.pos[1]-30,text=self.price,font=smallfont,fill="#FEFAE0")
             
 
     def generate_powerup(self):
         world.currentroom.cleared=True
         if Giova.coins>=self.price:
             Giova.coins-=self.price
-            Giova.coinslabel.config(text=f"x{Giova.coins}")
+            Giova.updateCoins()
             match self.index:
                 case 0:
                     Giova.damage+=random.randint(1,4)
@@ -776,7 +784,7 @@ class PowerUp():
         bg.delete(self.geometry)
         world.currentroom.power_up.remove(self)
         if self.price>0:
-            self.text.destroy()
+            bg.delete(self.text)
         """self.powerup_geometry.place_forget()
         self.powerup_geometry.delete()
         self.powerup_geometry.destroy()"""
@@ -931,6 +939,7 @@ class Room():
             print("raised")
             bg.tag_raise(i)
         bg.tag_raise(Giova.coinicon)
+        bg.tag_raise(Giova.coinslabel)
 class Door():
     def __init__(self) -> None:
         self.xbound=100
