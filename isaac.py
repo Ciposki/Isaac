@@ -62,7 +62,8 @@ netor_chad_imgs=[
     ImageTk.PhotoImage(Image.open("netor7.png").resize((400,400)))
 ]
 netor_scream_imgs+=netor_scream_imgs[::-1]
-netor_chad_imgs+=netor_chad_imgs[::-1]followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+netor_chad_imgs+=netor_chad_imgs[::-1]
+followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
 randomenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
 
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
