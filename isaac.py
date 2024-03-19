@@ -273,7 +273,7 @@ class player():
         self.invincibility_timer=0
         self.maxinvincibility_timer=10
         #damage dealt
-        self.damage = 100
+        self.damage = 3
         #coins held
         self.coins=0
         #creates text and an icon for coins
@@ -653,7 +653,7 @@ class Random_Enemy():
 class Boss_main():
     
     def __init__(self):
-        self.hp=60
+        self.hp=150
         #timer for attacks
         self.timer=200
         self.timer_max=200 
