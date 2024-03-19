@@ -49,7 +49,7 @@ head_img=ImageTk.PhotoImage(Image.open("coin.png").resize((400,400)))
 hand_img=ImageTk.PhotoImage(Image.open("coin.png").resize((250,250)))
 
 followenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
-randomenemy_img = ImageTk.PhotoImage(Image.open("BigBro.png").resize((150,150)))
+randomenemy_img = ImageTk.PhotoImage(Image.open("gosts.png").resize((100,100)))
 
 sfondo = bg.create_image(width/2,height/2,image=roomsimgs[0])
 window.wm_attributes('-transparentcolor','#add123')
@@ -474,8 +474,8 @@ class Random_Enemy():
         self.direction=[0,0]
         self.speed = 6
         self.pos=[800,700]
-        self.ybound=100
-        self.xbound=100
+        self.ybound=80
+        self.xbound=80
         self.timer=random.randint(0,19)
         self.timerdefault=20
         self.hp=10
